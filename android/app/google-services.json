@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "164927083458",
+    "project_id": "battery-quiz",
+    "storage_bucket": "battery-quiz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164927083458:android:608e5db52501d756177c5b",
+        "android_client_info": {
+          "package_name": "com.quizapp.quiz_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "164927083458-h1so0e3jofsdlsivh3abn3994pf6pn7m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9-TLjKDBBByY3ifDnnWlgbvNJXxOxWDI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164927083458-h1so0e3jofsdlsivh3abn3994pf6pn7m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164927083458-i68ievtct46vqemprht0s2kh7pqroptm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.quizapp.quizApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

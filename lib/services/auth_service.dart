@@ -1,0 +1,51 @@
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
+import 'firestore_service.dart';
+
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
+
+  Future<UserModel?> signIn(String email, String password) async {
+    try {
+      UserCredential cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (cred.user == null) {
+        throw Exception("Authentication failed");
+      }
+
+      // Fetch user details immediately to check role and status
+      UserModel? user = await _firestoreService.getUser(cred.user!.uid);
+
+      if (user == null) {
+        await _auth.signOut();
+        throw Exception("User record not found in database");
+      }
+
+      if (user.isDisabled) {
+        await _auth.signOut();
+        throw Exception("Your account has been disabled. Contact admin.");
+      }
+
+      return user;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
+  // Helper to get current user from firestore if already logged in (e.g. on app restart)
+  Future<UserModel?> getCurrentUser() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null) return null;
+    return await _firestoreService.getUser(currentUser.uid);
+  }
+}
