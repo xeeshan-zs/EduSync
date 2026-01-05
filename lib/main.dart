@@ -22,6 +22,7 @@ import 'screens/teacher/create_quiz_screen.dart';
 import 'screens/teacher/quiz_results_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
+import 'screens/admin/all_quizzes_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -138,6 +139,20 @@ class MainAppRouter extends StatelessWidget {
           builder: (context, state) {
             final result = state.extra as ResultModel;
             return ReviewQuizScreen(result: result);
+          },
+        ),
+        GoRoute(
+          path: '/all-quizzes',
+          builder: (context, state) {
+             final canPause = (state.extra as bool?) ?? false;
+             return AllQuizzesScreen(canPause: canPause);
+          },
+        ),
+        GoRoute(
+          path: '/quiz-results/:id',
+          builder: (context, state) {
+            final quiz = state.extra as QuizModel;
+            return QuizResultsScreen(quiz: quiz);
           },
         ),
       ],

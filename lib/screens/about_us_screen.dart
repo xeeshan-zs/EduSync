@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'dart:io';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -135,23 +136,31 @@ class AboutUsScreen extends StatelessWidget {
                  _buildTeamCard(
                    context, 
                    'Zeeshan Sarfraz', 
-                   'Team Lead', 
-                   'Visionary leader driving the project\'s success with strategic oversight and technical expertise.',
-                   'C:/Users/Shani/.gemini/antigravity/brain/2cef3a18-322a-413c-8d90-55602bddb641/avatar_zeeshan_leader_1767188954581.png'
-                 ),
-                 _buildTeamCard(
-                   context, 
-                   'Muneeb Ali', 
-                   'Backend Engineer', 
-                   'Dedicated developer focused on backend stability, data integrity, and API performance.',
-                   'C:/Users/Shani/.gemini/antigravity/brain/2cef3a18-322a-413c-8d90-55602bddb641/avatar_muneeb_backend_1767188974113.png'
+                   '', 
+                   '',
+                   'assets/images/team/zeeshan_avatar.png',
+                   0,
+                   socialLinks: {
+                     'web': 'https://zeeshan-sarfraz.web.app',
+                     'linkedin': 'https://linkedin.com/in/xeeshan-zs',
+                     'github': 'https://github.com/xeeshan-zs',
+                   }
                  ),
                  _buildTeamCard(
                    context, 
                    'Hammad Saleem', 
-                   'Frontend Specialist', 
-                   'Creative developer ensuring a seamless, responsive, and engaging user experience.',
-                   'C:/Users/Shani/.gemini/antigravity/brain/2cef3a18-322a-413c-8d90-55602bddb641/avatar_hammad_frontend_1767189002065.png'
+                   '', 
+                   '',
+                   'assets/images/team/hammad_avatar.png',
+                   1,
+                 ),
+                 _buildTeamCard(
+                   context, 
+                   'Muneeb Ali', 
+                   '', 
+                   '',
+                   'assets/images/team/muneeb_avatar.png',
+                   2,
                  ),
               ]),
             ),
@@ -163,72 +172,117 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamCard(BuildContext context, String name, String role, String description, String imagePath) {
+  Widget _buildTeamCard(BuildContext context, String name, String role, String description, String imagePath, int index, {Map<String, String>? socialLinks}) {
     return Card(
-      elevation: 0,
+      elevation: 4,
+      shadowColor: Colors.black26,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(24),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Avatar
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            ),
-            child: Image.file(
-              File(imagePath),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(child: Icon(Icons.person, size: 60, color: Colors.grey));
-              },
+      child: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(imagePath),
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.1),
+                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.95),
+              ],
+              stops: const [0.0, 0.4, 0.7, 1.0],
             ),
           ),
-          
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      role.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11, 
-                        fontWeight: FontWeight.bold, 
-                        color: Theme.of(context).colorScheme.primary
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 120), // Spacer to push text down
+              Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
+              if (role.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  role,
+                  style: TextStyle(
+                    color: Colors.blueAccent.shade100,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (socialLinks != null && socialLinks.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                // Social Icons
+                Row(
+                  children: [
+                    if (socialLinks.containsKey('web'))
+                      _buildSocialIcon(socialLinks['web']!, Icons.language),
+                    if (socialLinks.containsKey('linkedin'))
+                      _buildSocialIcon(socialLinks['linkedin']!, FontAwesomeIcons.linkedin),
+                    if (socialLinks.containsKey('github'))
+                      _buildSocialIcon(socialLinks['github']!, FontAwesomeIcons.github),
+                  ],
+                ),
+              ]
+            ],
           ),
-        ],
+        ),
       ),
-    ).animate().fadeIn().slideY(begin: 0.2, end: 0);
+    ).animate(delay: Duration(milliseconds: 150 * index))
+      .fadeIn(duration: 600.ms)
+      .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutBack);
+  }
+
+  Widget _buildSocialIcon(String url, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: () async {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: Colors.white),
+        ),
+      ),
+    );
   }
 }

@@ -96,17 +96,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // Brand/Logo Area
-                              const Row(
+                              Row(
                                 children: [
-                                  Icon(Icons.school, color: Colors.white, size: 28),
-                                  SizedBox(width: 8),
-                                  Text(
+                                  const Icon(Icons.school, color: Colors.white, size: 28),
+                                  const SizedBox(width: 8),
+                                  const Text(
                                     'QuizApp',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  TextButton.icon(
+                                    onPressed: () => context.push('/about'), 
+                                    icon: const Icon(Icons.info_outline, color: Colors.white70), 
+                                    label: const Text('About Us', style: TextStyle(color: Colors.white70))
                                   ),
                                 ],
                               ),
@@ -123,6 +129,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                     icon: const Icon(Icons.history, color: Colors.white70), 
                                     label: const Text('History', style: TextStyle(color: Colors.white70))
                                   ),
+
                                   TextButton.icon(
                                     onPressed: () => context.read<UserProvider>().logout(),
                                     icon: const Icon(Icons.logout, size: 20), 

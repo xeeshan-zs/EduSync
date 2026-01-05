@@ -87,11 +87,20 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                               Icon(Icons.lightbulb_outline, color: Colors.white, size: 28),
-                               SizedBox(width: 8),
-                               Text('QuizApp', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                               const Icon(Icons.lightbulb_outline, color: Colors.white, size: 28),
+                               const SizedBox(width: 8),
+                               const Text(
+                                'QuizApp',
+                                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
+                              ),
+                              const SizedBox(width: 24),
+                              TextButton.icon(
+                                onPressed: () => context.push('/about'), 
+                                icon: const Icon(Icons.info_outline, color: Colors.white70), 
+                                label: const Text('About Us', style: TextStyle(color: Colors.white70))
+                              ),
                             ],
                           ),
                           Row(
@@ -102,6 +111,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                                 label: const Text('Dashboard', style: TextStyle(color: Colors.white70))
                               ),
                               const SizedBox(width: 16),
+
                               FilledButton.icon(
                                 style: FilledButton.styleFrom(
                                   backgroundColor: Colors.redAccent, 

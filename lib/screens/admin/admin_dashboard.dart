@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
@@ -131,13 +132,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                               Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
-                               SizedBox(width: 8),
-                               Text('QuizApp Admin', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                               const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                               const SizedBox(width: 8),
+                               const Text('QuizApp Admin', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                               const SizedBox(width: 24),
+                               TextButton.icon(
+                                 onPressed: () => context.push('/about'), 
+                                 icon: const Icon(Icons.info_outline, color: Colors.white70), 
+                                 label: const Text('About Us', style: TextStyle(color: Colors.white70))
+                               ),
                             ],
                           ),
+
                           FilledButton.icon(
                             style: FilledButton.styleFrom(
                               backgroundColor: Colors.white.withOpacity(0.1),
@@ -186,6 +194,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                           ),
                           // Create Button (Big)
+                           ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF8B5CF6),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                elevation: 8,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              onPressed: () => context.push('/all-quizzes', extra: false),
+                              icon: const Icon(Icons.assignment, size: 24), 
+                              label: const Text('View All Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                           ),
+                           const SizedBox(width: 16),
                            ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF8B5CF6),
@@ -257,115 +278,102 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
 
-              // Table Card
-              SliverToBoxAdapter(
-                child: Padding(
+              // User List (Cards)
+              if (users.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: Text('No users found.')),
+                  ),
+                )
+              else
+                SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                  child: Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    clipBehavior: Clip.antiAlias,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        sortColumnIndex: _sortColumnIndex,
-                        sortAscending: _sortAscending,
-                        headingRowColor: MaterialStateProperty.all(const Color(0xFF2E236C)),
-                        headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        dataRowMinHeight: 60,
-                        dataRowMaxHeight: 60,
-                        columns: [
-                          DataColumn(
-                            label: const Text('Name'),
-                            onSort: (idx, asc) => _onSort((u) => u.name, idx, asc),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final u = users[index];
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.withOpacity(0.2)),
                           ),
-                          DataColumn(
-                            label: const Text('Role'),
-                            onSort: (idx, asc) => _onSort((u) => u.role.name, idx, asc),
-                          ),
-                          const DataColumn(label: Text('Email')), // Not sorting by email for now, simple implementation
-                          DataColumn(
-                            label: const Text('Status'),
-                            onSort: (idx, asc) => _onSort((u) => u.isDisabled ? 1 : 0, idx, asc),
-                          ),
-                          const DataColumn(label: Text('Actions')),
-                        ],
-                        rows: users.map((u) {
-                          return DataRow(
-                            color: MaterialStateProperty.resolveWith((states) {
-                               return users.indexOf(u) % 2 == 0 ? Colors.white : Colors.grey.withOpacity(0.05);
-                            }),
-                            cells: [
-                              DataCell(Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 16, 
-                                    backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
-                                    child: Icon(Icons.person, size: 16, color: _getRoleColor(u.role)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
+                                  child: Icon(Icons.person, color: _getRoleColor(u.role)),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      const SizedBox(height: 4),
+                                      Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  Text(u.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                ],
-                              )),
-                              DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: _getRoleColor(u.role).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    u.role.name.toUpperCase(), 
-                                    style: TextStyle(color: _getRoleColor(u.role), fontWeight: FontWeight.bold, fontSize: 11)
-                                  ),
-                                )
-                              ),
-                              DataCell(Text(u.email)),
-                              DataCell(
-                                 Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      u.isDisabled ? 'Disabled' : 'Active',
-                                      style: TextStyle(
-                                        color: u.isDisabled ? Colors.red : Colors.green,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11
-                                      )
-                                    ),
-                                 )
-                              ),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Switch(
-                                      value: !u.isDisabled, // Switch represents "Is Active"
-                                      activeColor: Colors.green,
-                                      onChanged: (u.role == UserRole.admin) ? null : (val) {
-                                         if (u.role == UserRole.super_admin) return;
-                                         _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
-                                      },
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _getRoleColor(u.role).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
+                                        ),
+                                      ],
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
-                                      tooltip: 'Details',
-                                      onPressed: () => _showUserDetails(context, u),
-                                    )
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                         Switch(
+                                          value: !u.isDisabled, 
+                                          activeColor: Colors.green,
+                                          onChanged: (u.role == UserRole.admin) ? null : (val) {
+                                             if (u.role == UserRole.super_admin) return;
+                                              _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
+                                          tooltip: 'Details',
+                                          onPressed: () => _showUserDetails(context, u),
+                                        )
+                                      ],
+                                    ),
                                   ],
                                 )
-                              ),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: users.length,
                     ),
                   ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 60)),
+                ),const SliverToBoxAdapter(child: SizedBox(height: 60)),
             ],
           );
         },
