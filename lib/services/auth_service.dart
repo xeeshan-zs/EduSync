@@ -42,6 +42,14 @@ class AuthService {
     await _auth.signOut();
   }
 
+  Future<void> updatePassword(String newPassword) async {
+    if (_auth.currentUser != null) {
+      await _auth.currentUser!.updatePassword(newPassword);
+    } else {
+      throw Exception('No user logged in');
+    }
+  }
+
   // Helper to get current user from firestore if already logged in (e.g. on app restart)
   Future<UserModel?> getCurrentUser() async {
     User? currentUser = _auth.currentUser;

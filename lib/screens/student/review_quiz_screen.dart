@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/quiz_model.dart';
 import '../../models/result_model.dart';
+import '../../models/quiz_model.dart';
+import '../../models/result_model.dart';
 import '../../services/firestore_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class ReviewQuizScreen extends StatefulWidget {
   final ResultModel result;
@@ -35,10 +41,10 @@ class _ReviewQuizScreenState extends State<ReviewQuizScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<UserProvider>().user;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quiz Review'),
-      ),
+      appBar: QuizAppBar(user: user, isTransparent: false),
+      drawer: QuizAppDrawer(user: user),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _quiz == null

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/quiz_model.dart';
 import '../../models/result_model.dart';
 import '../../services/firestore_service.dart';
+import '../../providers/user_provider.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class QuizResultsScreen extends StatefulWidget {
   final QuizModel quiz;
@@ -27,8 +31,12 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final user = context.watch<UserProvider>().user;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: QuizAppBar(user: user, isTransparent: true),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: CustomScrollView(
         slivers: [
@@ -36,7 +44,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(32, 60, 32, 40),
+              padding: const EdgeInsets.fromLTRB(32, 120, 32, 40), // Increased top padding
               decoration: const BoxDecoration(
                 color: Color(0xFF1E1B2E), // Match Teacher Dashboard Dark Theme
                 gradient: LinearGradient(
@@ -51,26 +59,15 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(), 
-                        icon: const Icon(Icons.arrow_back, color: Colors.white)
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
+                   // Removed Manual Row
+                   const Text(
                         'Quiz Results',
                         style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
+                   ),
                   const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 48.0),
-                    child: Text(
-                      'Results for: ${widget.quiz.title}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 18),
-                    ),
+                  Text(
+                    'Results for: ${widget.quiz.title}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 18),
                   ),
                 ],
               ),

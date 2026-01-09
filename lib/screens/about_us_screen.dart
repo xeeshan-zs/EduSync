@@ -3,13 +3,22 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../widgets/quiz_app_bar.dart';
+import '../widgets/quiz_app_drawer.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<UserProvider>().user;
+    
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: QuizAppBar(user: user, isTransparent: true),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: CustomScrollView(
         slivers: [
@@ -17,7 +26,7 @@ class AboutUsScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
+              padding: const EdgeInsets.fromLTRB(24, 120, 24, 40), // Increased top padding
               decoration: const BoxDecoration(
                 color: Color(0xFF1E1B2E),
                 gradient: LinearGradient(
@@ -33,37 +42,12 @@ class AboutUsScreen extends StatelessWidget {
                   bottomRight: Radius.circular(32),
                 ),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                       // Brand
-                       const Row(
-                         children: [
-                           Icon(Icons.info_outline, color: Colors.white, size: 28),
-                           SizedBox(width: 8),
-                           Text(
-                             'About QuizApp', 
-                             style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
-                           ),
-                         ],
-                       ),
-                       // Back Button
-                       FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () => context.canPop() ? context.pop() : context.go('/login'),
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('Back'),
-                      ),
-                    ],
-                   ),
-                   const SizedBox(height: 60),
-                   const Text(
+                   // Removed Manual Row
+                   SizedBox(height: 20),
+                   Text(
                      'Empowering Education',
                      style: TextStyle(
                        color: Colors.white,
@@ -72,13 +56,13 @@ class AboutUsScreen extends StatelessWidget {
                      ),
                      textAlign: TextAlign.center,
                    ),
-                   const SizedBox(height: 16),
-                   const Text(
+                   SizedBox(height: 16),
+                   Text(
                      'QuizApp is a comprehensive platform designed to streamline assessments and enhance learning outcomes for students and teachers alike.',
                      style: TextStyle(color: Colors.white70, fontSize: 16),
                      textAlign: TextAlign.center,
                    ),
-                   const SizedBox(height: 40),
+                   SizedBox(height: 40),
                 ],
               ),
             ),
@@ -172,7 +156,7 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamCard(BuildContext context, String name, String role, String description, String imagePath, int index, {Map<String, String>? socialLinks}) {
+  static Widget _buildTeamCard(BuildContext context, String name, String role, String description, String imagePath, int index, {Map<String, String>? socialLinks}) {
     return Card(
       elevation: 4,
       shadowColor: Colors.black26,
@@ -264,7 +248,7 @@ class AboutUsScreen extends StatelessWidget {
       .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutBack);
   }
 
-  Widget _buildSocialIcon(String url, IconData icon) {
+  static Widget _buildSocialIcon(String url, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: InkWell(

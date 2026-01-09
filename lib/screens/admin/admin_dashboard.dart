@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -40,6 +42,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final user = context.watch<UserProvider>().user;
 
     return Scaffold(
+      extendBodyBehindAppBar: true, 
+      appBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<List<UserModel>>(
         stream: _usersStream,
@@ -109,7 +114,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(32, 60, 32, 40),
+                  // Increased top padding to 120 to account for AppBar (which is ~70-80px + status bar)
+                  padding: const EdgeInsets.fromLTRB(32, 120, 32, 40), 
                   decoration: const BoxDecoration(
                     color: Color(0xFF1E1B2E),
                     gradient: LinearGradient(
@@ -128,36 +134,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Bar
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                               const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
-                               const SizedBox(width: 8),
-                               const Text('QuizApp Admin', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                               const SizedBox(width: 24),
-                               TextButton.icon(
-                                 onPressed: () => context.push('/about'), 
-                                 icon: const Icon(Icons.info_outline, color: Colors.white70), 
-                                 label: const Text('About Us', style: TextStyle(color: Colors.white70))
-                               ),
-                            ],
-                          ),
-
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white.withOpacity(0.1),
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () => context.read<UserProvider>().logout(),
-                            icon: const Icon(Icons.logout, size: 18),
-                            label: const Text('Logout'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
+                      // Removed old manual Top Bar Row
                       
                       // Dashboard Main Content
                       Row(
@@ -181,46 +158,83 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   style: TextStyle(color: Colors.white70, fontSize: 16),
                                 ),
                                 const SizedBox(height: 24),
-                                Row(
+                                Wrap( // Wrap for responsiveness
+                                  spacing: 12,
+                                  runSpacing: 12,
                                   children: [
                                     _buildStatBadge(Icons.people, '$activeUsersCount Active Users'),
-                                    const SizedBox(width: 12),
                                     _buildStatBadge(Icons.school, '$students Students'),
-                                    const SizedBox(width: 12),
                                     _buildStatBadge(Icons.work, '$teachers Teachers'),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          // Create Button (Big)
-                           ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF8B5CF6),
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              ),
-                              onPressed: () => context.push('/all-quizzes', extra: false),
-                              icon: const Icon(Icons.assignment, size: 24), 
-                              label: const Text('View All Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                           ),
-                           const SizedBox(width: 16),
-                           ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8B5CF6),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              ),
-                              onPressed: () => _showCreateUserDialog(context),
-                              icon: const Icon(Icons.person_add, size: 24), 
-                              label: const Text('Add New User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                           ),
+                          // Create Buttons (Responsive Layout needed? Row is fine for now on desktop, might need Wrap for mobile)
+                          if (MediaQuery.of(context).size.width > 600) ...[
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF8B5CF6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => context.push('/all-quizzes', extra: false),
+                                icon: const Icon(Icons.assignment, size: 24), 
+                                label: const Text('View All Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                             const SizedBox(width: 16),
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF8B5CF6),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => _showCreateUserDialog(context),
+                                icon: const Icon(Icons.person_add, size: 24), 
+                                label: const Text('Add New User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                          ]
                         ],
                       ),
+                      // For Mobile Buttons
+                      if (MediaQuery.of(context).size.width <= 600) ...[
+                         const SizedBox(height: 24),
+                         Row(
+                           children: [
+                             Expanded(
+                               child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF8B5CF6),
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  onPressed: () => context.push('/all-quizzes', extra: false),
+                                  icon: const Icon(Icons.assignment), 
+                                  label: const Text('Quizzes'),
+                               ),
+                             ),
+                             const SizedBox(width: 12),
+                             Expanded(
+                               child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF8B5CF6),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  onPressed: () => _showCreateUserDialog(context),
+                                  icon: const Icon(Icons.person_add), 
+                                  label: const Text('Add User'),
+                               ),
+                             ),
+                           ],
+                         )
+                      ],
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -231,47 +245,62 @@ class _AdminDashboardState extends State<AdminDashboard> {
                SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(32, 40, 32, 16),
-                  child: Row(
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 16,
+                    runSpacing: 16,
                     children: [
-                      const Icon(Icons.list_alt, size: 28),
-                      const SizedBox(width: 12),
-                      Text('User Directory', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      // Role Filter Dropdown
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedRoleFilter,
-                            items: ['All', 'Student', 'Teacher', 'Admin']
-                                .map((role) => DropdownMenuItem(
-                                      value: role,
-                                      child: Text(role.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                    ))
-                                .toList(),
-                            onChanged: (val) => setState(() => _selectedRoleFilter = val!),
-                          ),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.list_alt, size: 28),
+                          const SizedBox(width: 12),
+                          Text('User Directory', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      // Search Bar
-                      SizedBox(
-                        width: 250,
-                        child: TextField(
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                          decoration: InputDecoration(
-                            hintText: 'Search user...',
-                            prefixIcon: const Icon(Icons.search),
-                            filled: true,
-                            fillColor: Colors.grey.withOpacity(0.1),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      
+                      // Filters
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Role Filter Dropdown
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedRoleFilter,
+                                items: ['All', 'Student', 'Teacher', 'Admin']
+                                    .map((role) => DropdownMenuItem(
+                                          value: role,
+                                          child: Text(role.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) => setState(() => _selectedRoleFilter = val!),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 16),
+                          // Search Bar
+                          SizedBox(
+                            width: 250,
+                            child: TextField(
+                              onChanged: (v) => setState(() => _searchQuery = v),
+                              decoration: InputDecoration(
+                                hintText: 'Search user...',
+                                prefixIcon: const Icon(Icons.search),
+                                filled: true,
+                                fillColor: Colors.grey.withOpacity(0.1),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -320,6 +349,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     ],
                                   ),
                                 ),
+                                if (MediaQuery.of(context).size.width > 600) // Desktop/Tablet view
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
@@ -364,7 +394,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                       ],
                                     ),
                                   ],
-                                )
+                                ),
                               ],
                             ),
                           ),

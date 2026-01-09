@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 class UserProvider with ChangeNotifier {
   UserModel? _user;
@@ -48,5 +49,41 @@ class UserProvider with ChangeNotifier {
     await _authService.signOut();
     _user = null;
     notifyListeners();
+  }
+
+  Future<void> updateProfile(String name, {Map<String, dynamic>? metadata}) async {
+    if (_user == null) return;
+    
+    // Create updated user object
+    // Note: We need a copyWith method or just recreate manually
+    final updatedUser = UserModel(
+      uid: _user!.uid,
+      email: _user!.email,
+      name: name,
+      role: _user!.role,
+      isDisabled: _user!.isDisabled,
+      metadata: metadata ?? _user!.metadata,
+    );
+
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await FirestoreService().updateUser(updatedUser);
+      _user = updatedUser; // Update local state
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authService.updatePassword(newPassword);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

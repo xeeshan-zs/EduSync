@@ -6,7 +6,8 @@ import '../../services/firestore_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/result_model.dart';
-
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -26,6 +27,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
+      extendBodyBehindAppBar: true, 
+      appBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<List<QuizModel>>(
         stream: _firestoreService.getQuizzesForStudent(),
@@ -73,7 +77,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   SliverToBoxAdapter(
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
+                      // Increased Padding Top for AppBar
+                      padding: const EdgeInsets.fromLTRB(24, 120, 24, 40),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E1B2E),
                         gradient: const LinearGradient(
@@ -92,58 +97,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Brand/Logo Area
-                              Row(
-                                children: [
-                                  const Icon(Icons.school, color: Colors.white, size: 28),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'QuizApp',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  TextButton.icon(
-                                    onPressed: () => context.push('/about'), 
-                                    icon: const Icon(Icons.info_outline, color: Colors.white70), 
-                                    label: const Text('About Us', style: TextStyle(color: Colors.white70))
-                                  ),
-                                ],
-                              ),
-                              // Nav Items
-                              Row(
-                                children: [
-                                  TextButton.icon(
-                                    onPressed: () {}, 
-                                    icon: const Icon(Icons.home, color: Colors.white70), 
-                                    label: const Text('Home', style: TextStyle(color: Colors.white70))
-                                  ),
-                                  TextButton.icon(
-                                    onPressed: () => context.go('/student/history'), 
-                                    icon: const Icon(Icons.history, color: Colors.white70), 
-                                    label: const Text('History', style: TextStyle(color: Colors.white70))
-                                  ),
-
-                                  TextButton.icon(
-                                    onPressed: () => context.read<UserProvider>().logout(),
-                                    icon: const Icon(Icons.logout, size: 20), 
-                                    label: const Text('Logout'),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.redAccent,
-                                      backgroundColor: Colors.white.withOpacity(0.1),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 60),
+                          // Removed Manual Nav
+                          
                           Text(
                             'Welcome back, ${user.name}!',
                             style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -296,7 +251,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -363,7 +318,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.5),
+          color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

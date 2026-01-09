@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({super.key});
@@ -39,6 +41,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     final user = context.watch<UserProvider>().user;
 
     return Scaffold(
+      extendBodyBehindAppBar: true, 
+      appBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<List<UserModel>>(
         stream: _usersStream,
@@ -110,7 +115,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(32, 60, 32, 40),
+                  padding: const EdgeInsets.fromLTRB(32, 120, 32, 40),
                   decoration: const BoxDecoration(
                     color: Color(0xFF1E1B2E),
                     gradient: LinearGradient(
@@ -129,37 +134,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Bar
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                               const Icon(Icons.shield, color: Colors.orangeAccent, size: 28),
-                               const SizedBox(width: 8),
-                               const Text('QuizApp SuperAdmin', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                               const SizedBox(width: 24),
-                               TextButton.icon(
-                                 onPressed: () => context.push('/about'), 
-                                 icon: const Icon(Icons.info_outline, color: Colors.white70), 
-                                 label: const Text('About Us', style: TextStyle(color: Colors.white70))
-                               ),
-                            ],
-                          ),
-
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white.withOpacity( 0.1),
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () => context.read<UserProvider>().logout(),
-                            icon: const Icon(Icons.logout, size: 18),
-                            label: const Text('Logout'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                      
                       // Dashboard Main Content
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -182,46 +156,83 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                   style: TextStyle(color: Colors.white70, fontSize: 16),
                                 ),
                                 const SizedBox(height: 24),
-                                Row(
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
                                   children: [
                                     _buildStatBadge(Icons.storage, '$systemTotal Total Records'),
-                                    const SizedBox(width: 12),
                                     _buildStatBadge(Icons.admin_panel_settings, '$admins Admins'),
-                                    const SizedBox(width: 12),
                                     _buildStatBadge(Icons.check_circle, '$activeUsersCount Active'),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          // Create Button (Big)
-                           ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.orangeAccent,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              ),
-                              onPressed: () => context.push('/all-quizzes', extra: true), // true = canPause
-                              icon: const Icon(Icons.assignment, size: 24),
-                              label: const Text('Manage Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                           ),
-                           const SizedBox(width: 16),
-                           ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orangeAccent,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              ),
-                              onPressed: () => _showCreateUserDialog(context),
-                              icon: const Icon(Icons.add_moderator, size: 24), 
-                              label: const Text('Add User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                           ),
+                          // Create Buttons (Responsive)
+                          if (MediaQuery.of(context).size.width > 700) ...[
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.orangeAccent,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => context.push('/all-quizzes', extra: true), // true = canPause
+                                icon: const Icon(Icons.assignment, size: 24),
+                                label: const Text('Manage Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                             const SizedBox(width: 16),
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orangeAccent,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => _showCreateUserDialog(context),
+                                icon: const Icon(Icons.add_moderator, size: 24), 
+                                label: const Text('Add User', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                          ],
                         ],
                       ),
+                      // Mobile Buttons
+                      if (MediaQuery.of(context).size.width <= 700) ...[
+                         const SizedBox(height: 24),
+                         Row(
+                           children: [
+                             Expanded(
+                               child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.orangeAccent,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  onPressed: () => context.push('/all-quizzes', extra: true),
+                                  icon: const Icon(Icons.assignment),
+                                  label: const Text('Quizzes'),
+                               ),
+                             ),
+                             const SizedBox(width: 16),
+                             Expanded(
+                               child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orangeAccent,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  onPressed: () => _showCreateUserDialog(context),
+                                  icon: const Icon(Icons.add_moderator), 
+                                  label: const Text('Add User'),
+                               ),
+                             ),
+                           ],
+                         ),
+                      ],
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -248,11 +259,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedRoleFilter,
-                            items: ['All', 'Student', 'Teacher', 'Admin', 'Super_admin'] // Keep raw enum names or readable? enum names are lowercase usually in my logic, but here I used display strings.
-                                // In AdminDashboard I used: ['All', 'Student', 'Teacher', 'Admin']
-                                // Here I need to match what I did in AdminDashboard logic:
-                                // users.where((u) => u.role.name.toLowerCase() == _selectedRoleFilter.toLowerCase())
-                                // So 'Super_admin' -> 'super_admin' match works.
+                            items: ['All', 'Student', 'Teacher', 'Admin', 'Super_admin']
                                 .map((role) => DropdownMenuItem(
                                       value: role,
                                       child: Text(role.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),

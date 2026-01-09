@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
+import '../../providers/user_provider.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class AllQuizzesScreen extends StatelessWidget {
   final bool canPause;
@@ -13,9 +16,12 @@ class AllQuizzesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final user = context.watch<UserProvider>().user;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: QuizAppBar(user: user, isTransparent: false),
+      drawer: QuizAppDrawer(user: user),
       body: StreamBuilder<List<QuizModel>>(
         stream: firestoreService.getAllQuizzes(),
         builder: (context, snapshot) {
@@ -28,53 +34,57 @@ class AllQuizzesScreen extends StatelessWidget {
 
           final quizzes = snapshot.data ?? [];
 
-          return CustomScrollView(
-            slivers: [
-              // Connected AppBar
-              SliverAppBar(
-                floating: true,
-                pinned: true,
-                title: Text(canPause ? 'Manage All Quizzes' : 'All Quizzes'),
-                backgroundColor: const Color(0xFF2E236C),
-                foregroundColor: Colors.white,
-                actions: [
-                   if (canPause)
-                    IconButton(
-                      icon: const Icon(Icons.info_outline),
-                      tooltip: 'Super Admin Access',
-                      onPressed: () {},
+          return Column(
+            children: [
+              // Header title block (optional, since AppBar has navigation)
+              // But let's add a small header to indicate context "Manage Quizzes"
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                color: const Color(0xFF2E236C).withOpacity(0.05),
+                child: Row(
+                  children: [
+                    Icon(canPause ? Icons.settings_applications : Icons.assignment, color: const Color(0xFF2E236C)),
+                    const SizedBox(width: 12),
+                    Text(
+                      canPause ? 'Manage All Quizzes' : 'All Quizzes',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF2E236C)),
                     ),
-                ],
-              ),
-              
-              if (quizzes.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Text(
-                      'No quizzes available.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.all(24),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 400,
-                      mainAxisExtent: 240,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final quiz = quizzes[index];
-                        return _buildQuizCard(context, quiz, firestoreService);
-                      },
-                      childCount: quizzes.length,
-                    ),
-                  ),
+                  ],
                 ),
+              ),
+
+              Expanded(
+                child: quizzes.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No quizzes available.',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    )
+                  : CustomScrollView(
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.all(24),
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 400,
+                              mainAxisExtent: 240,
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 20,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final quiz = quizzes[index];
+                                return _buildQuizCard(context, quiz, firestoreService);
+                              },
+                              childCount: quizzes.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+              ),
             ],
           );
         },

@@ -5,6 +5,8 @@ import '../../models/quiz_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class CreateQuizScreen extends StatefulWidget {
   final QuizModel? quizToEdit;
@@ -107,9 +109,11 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.quizToEdit != null;
+    final user = context.watch<UserProvider>().user;
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: Text(isEditing ? 'Edit Quiz' : 'Create New Quiz')),
+      appBar: QuizAppBar(user: user, isTransparent: false),
+      drawer: QuizAppDrawer(user: user),
       body: Form(
         key: _formKey,
         child: Column(

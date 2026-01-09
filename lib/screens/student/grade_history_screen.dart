@@ -6,6 +6,8 @@ import '../../models/result_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class GradeHistoryScreen extends StatelessWidget {
   const GradeHistoryScreen({super.key});
@@ -18,6 +20,9 @@ class GradeHistoryScreen extends StatelessWidget {
     if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: QuizAppBar(user: user, isTransparent: true),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<List<ResultModel>>(
         stream: firestoreService.getResultsForStudent(user.uid),
@@ -36,7 +41,7 @@ class GradeHistoryScreen extends StatelessWidget {
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
+                  padding: const EdgeInsets.fromLTRB(24, 120, 24, 40), // Increased top padding
                   decoration: const BoxDecoration(
                     color: Color(0xFF1E1B2E),
                     gradient: LinearGradient(
@@ -55,52 +60,7 @@ class GradeHistoryScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Brand/Logo Area
-                          const Row(
-                            children: [
-                              Icon(Icons.school, color: Colors.white, size: 28),
-                              SizedBox(width: 8),
-                              Text(
-                                'QuizApp',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Nav Items
-                          Row(
-                            children: [
-                               TextButton.icon(
-                                onPressed: () => context.go('/student'), 
-                                icon: const Icon(Icons.home_outlined, color: Colors.white70), 
-                                label: const Text('Home', style: TextStyle(color: Colors.white70))
-                              ),
-                              TextButton.icon(
-                                onPressed: () {}, 
-                                icon: const Icon(Icons.history, color: Colors.white), 
-                                label: const Text('History', style: TextStyle(color: Colors.white)),
-                              ),
-                              const SizedBox(width: 8),
-                              FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.white.withValues(alpha: 0.1),
-                                  foregroundColor: Colors.white,
-                                ),
-                                onPressed: () => context.read<UserProvider>().logout(),
-                                icon: const Icon(Icons.logout, size: 18), 
-                                label: const Text('Logout'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 60),
+                      // Removed Manual Nav Items
                       Text(
                         'Your Grade History',
                         style: Theme.of(context).textTheme.displaySmall?.copyWith(

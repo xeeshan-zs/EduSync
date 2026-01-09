@@ -112,6 +112,10 @@ class FirestoreService {
   Future<void> toggleUserDisabled(String uid, bool currentStatus) async {
     await _db.collection('users').doc(uid).update({'isDisabled': !currentStatus});
   }
+
+  Future<void> updateUser(UserModel user) async {
+    await _db.collection('users').doc(user.uid).update(user.toMap());
+  }
   
   Future<void> createUser(UserModel user, String password) async {
      // NOTE: This usually runs in cloud function or secondary app, 

@@ -23,6 +23,7 @@ import 'screens/teacher/quiz_results_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
 import 'screens/admin/all_quizzes_screen.dart';
+import 'screens/common/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -154,6 +155,10 @@ class MainAppRouter extends StatelessWidget {
             final quiz = state.extra as QuizModel;
             return QuizResultsScreen(quiz: quiz);
           },
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
       // Theme Configuration with Google Fonts & Material 3

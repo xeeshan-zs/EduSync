@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../models/quiz_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../widgets/quiz_app_bar.dart';
+import '../../widgets/quiz_app_drawer.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -22,6 +24,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     final firestoreService = FirestoreService();
 
     return Scaffold(
+      extendBodyBehindAppBar: true, 
+      appBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: StreamBuilder<List<QuizModel>>(
         stream: firestoreService.getAllQuizzes(),
@@ -59,14 +64,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(32, 60, 32, 40),
+                  padding: const EdgeInsets.fromLTRB(32, 120, 32, 40),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF1E1B2E), // Dark Navy/Purple equivalent for Light Mode context contrast
-                    // Or keep it consistent with Light Theme using Primary:
-                    // color: Theme.of(context).colorScheme.primaryContainer, 
-                    // But user asked to "look like this" (dark dashboard). 
-                    // However, previous prompt said "use current color scheme".
-                    // I will use a Dark Primary container to capture the "Dashboard" feel while respecting the app's palette density.
+                    color: Color(0xFF1E1B2E), 
                     gradient: LinearGradient(
                       colors: [
                         Color(0xFF2E236C), // Deep Purple
@@ -83,50 +83,6 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Bar Area
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                               const Icon(Icons.lightbulb_outline, color: Colors.white, size: 28),
-                               const SizedBox(width: 8),
-                               const Text(
-                                'QuizApp',
-                                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
-                              ),
-                              const SizedBox(width: 24),
-                              TextButton.icon(
-                                onPressed: () => context.push('/about'), 
-                                icon: const Icon(Icons.info_outline, color: Colors.white70), 
-                                label: const Text('About Us', style: TextStyle(color: Colors.white70))
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              TextButton.icon(
-                                onPressed: () {}, 
-                                icon: const Icon(Icons.dashboard, color: Colors.white70), 
-                                label: const Text('Dashboard', style: TextStyle(color: Colors.white70))
-                              ),
-                              const SizedBox(width: 16),
-
-                              FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.redAccent, 
-                                  foregroundColor: Colors.white,
-                                ),
-                                onPressed: () => context.read<UserProvider>().logout(),
-                                icon: const Icon(Icons.logout, size: 18),
-                                label: const Text('Logout'),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                      
                       // Dashboard Main Content
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -159,21 +115,41 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                               ],
                             ),
                           ),
-                          // Create Button (Big)
-                           ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8B5CF6), // Bright Purple
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                              ),
-                              onPressed: () => context.push('/teacher/create-quiz'),
-                              icon: const Icon(Icons.add, size: 24), 
-                              label: const Text('Create New Quiz', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                           ),
+                          // Create Button (Visible on Desktop)
+                          if (MediaQuery.of(context).size.width > 600)
+                             ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF8B5CF6), // Bright Purple
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                ),
+                                onPressed: () => context.push('/teacher/create-quiz'),
+                                icon: const Icon(Icons.add, size: 24), 
+                                label: const Text('Create New Quiz', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                             ),
                         ],
                       ),
+                      // Create Button (Visible on Mobile)
+                      if (MediaQuery.of(context).size.width <= 600) ...[
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF8B5CF6), // Bright Purple
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                onPressed: () => context.push('/teacher/create-quiz'),
+                                icon: const Icon(Icons.add, size: 24), 
+                                label: const Text('Create New Quiz', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                             ),
+                          )
+                      ],
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -288,9 +264,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -319,7 +295,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: quiz.isPaused ? Colors.grey.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
+                    color: quiz.isPaused ? Colors.grey.withOpacity(0.2) : Colors.green.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -404,7 +380,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                width: double.infinity,
                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                decoration: BoxDecoration(
-                 color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                 color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                  borderRadius: BorderRadius.circular(8),
                ),
                child: Row(
@@ -462,7 +438,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     return Container(
        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
        decoration: BoxDecoration(
-         color: const Color(0xFF2C2C35).withValues(alpha: 0.05), // Subtle grey
+         color: const Color(0xFF2C2C35).withOpacity(0.05), // Subtle grey
          borderRadius: BorderRadius.circular(8),
          border: Border.all(color: Colors.black12),
        ),
