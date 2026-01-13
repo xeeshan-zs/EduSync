@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
 import '../../providers/user_provider.dart';
+import '../../models/user_model.dart';
 import '../../widgets/quiz_app_bar.dart';
 import '../../widgets/quiz_app_drawer.dart';
 
@@ -36,8 +37,7 @@ class AllQuizzesScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Header title block (optional, since AppBar has navigation)
-              // But let's add a small header to indicate context "Manage Quizzes"
+              // Header title block
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -164,25 +164,74 @@ class AllQuizzesScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 
-                // Action Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                       context.push('/quiz-results/${quiz.id}', extra: quiz);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF2E236C),
-                      side: const BorderSide(color: Color(0xFF2E236C)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                           context.push('/quiz-results/${quiz.id}', extra: quiz);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E236C),
+                          side: const BorderSide(color: Color(0xFF2E236C)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.analytics_outlined, size: 18),
+                        label: const Text('Results'),
+                      ),
                     ),
-                    icon: const Icon(Icons.analytics_outlined, size: 18),
-                    label: const Text('View Results'),
-                  ),
+                    
+                    if (context.read<UserProvider>().user?.role == UserRole.super_admin) ...[
+                      const SizedBox(width: 8),
+                      // Edit Button
+                      IconButton(
+                        onPressed: () => context.push('/teacher/create-quiz', extra: quiz),
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        tooltip: 'Edit Quiz',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Delete Button
+                      IconButton(
+                        onPressed: () => _confirmDelete(context, quiz.id, firestoreService),
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Delete Quiz',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.red.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ]
+                  ],
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, String quizId, FirestoreService firestoreService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Quiz'),
+        content: const Text('Are you sure you want to delete this quiz? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await firestoreService.deleteQuiz(quizId);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Delete'),
           ),
         ],
       ),

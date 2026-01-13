@@ -58,7 +58,7 @@ class AboutUsScreen extends StatelessWidget {
                    ),
                    SizedBox(height: 16),
                    Text(
-                     'QuizApp is a comprehensive platform designed to streamline assessments and enhance learning outcomes for students and teachers alike.',
+                     'EduSync is a comprehensive platform designed to streamline assessments and enhance learning outcomes for students and teachers alike.',
                      style: TextStyle(color: Colors.white70, fontSize: 16),
                      textAlign: TextAlign.center,
                    ),
@@ -97,9 +97,11 @@ class AboutUsScreen extends StatelessWidget {
                 children: [
                    Icon(Icons.people_outline, color: Theme.of(context).colorScheme.primary),
                    const SizedBox(width: 8),
-                   Text(
-                     'Meet the Team',
-                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                   Expanded(
+                     child: Text(
+                       'Meet the Runtime Terrors Team',
+                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                     ),
                    ),
                 ],
               ),

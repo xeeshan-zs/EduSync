@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
+      TextInput.finishAutofillContext();
       // Navigation is handled by GoRouter redirect
     } catch (e) {
       if (mounted) {
@@ -87,91 +89,271 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isDesktop = screenSize.width > 900;
+
+    if (!isDesktop) {
+      return _buildMobileLayout(context);
+    }
+
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: AutofillGroup(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                     const Icon(Icons.quiz, size: 80, color: Colors.deepPurple),
-                     const SizedBox(height: 32),
-                     Text(
-                      'Welcome Back',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                     ).animate().fadeIn().slideY(begin: 0.3, end: 0),
-                     const SizedBox(height: 32),
-                     TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.email],
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Required' : null,
-                     ).animate().fadeIn(delay: 200.ms),
-                     const SizedBox(height: 16),
-                     TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                          tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+      body: Row(
+        children: [
+          // Left Side - Branding (Desktop only)
+            Expanded(
+              flex: 5,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF2E236C), Color(0xFF433D8B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                      ),
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.password],
-                      onFieldSubmitted: (_) => _login(),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Required' : null,
-                     ).animate().fadeIn(delay: 300.ms),
-                     const SizedBox(height: 24),
-                     SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _isLoading ? null : _login,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20, 
-                                width: 20, 
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                              )
-                            : const Text('Login'),
-                      ),
-                     ).animate().fadeIn(delay: 400.ms),
-                     const SizedBox(height: 24),
-                     TextButton.icon(
-                       onPressed: () => GoRouter.of(context).push('/about'),
-                       icon: const Icon(Icons.info_outline, size: 16),
-                       label: const Text('About Us'),
-                     ).animate().fadeIn(delay: 600.ms),
-                  ],
+                        child: const Icon(Icons.school_rounded, size: 80, color: Colors.white),
+                      ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'EduSync',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                        ),
+                      ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3, end: 0),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Empowering Education through\nSmart Assessments',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 18,
+                          height: 1.5,
+                        ),
+                      ).animate().fadeIn(delay: 400.ms),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Right Side - Login Form
+          Expanded(
+            flex: 4,
+            child: Container(
+              color: Colors.white,
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(40),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: _buildLoginForm(context, isMobile: false),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          // Gradient Background Header
+          Container(
+            height: MediaQuery.of(context).size.height * 0.4,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF2E236C), Color(0xFF433D8B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                 children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.school_rounded, size: 48, color: Colors.white),
+                    ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'EduSync', 
+                      style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)
+                    ).animate().fadeIn(delay: 200.ms),
+                    const SizedBox(height: 40), // Push up slightly
+                 ],
+              ),
+            ),
+          ),
+          
+          // Form Card Overlay
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.30),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+                  child: _buildLoginForm(context, isMobile: true),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginForm(BuildContext context, {required bool isMobile}) {
+    return Form(
+      key: _formKey,
+      child: AutofillGroup(
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isMobile) 
+             Center( // Handle notch/pull bar
+               child: Container(
+                 width: 40, height: 4, 
+                 margin: const EdgeInsets.only(bottom: 24),
+                 decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+               ),
+             ),
+
+          Text(
+            'Welcome Back!',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF2E236C),
+                ),
+          ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+          const SizedBox(height: 8),
+          Text(
+            'Please enter your details to sign in.',
+            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          ),
+          const SizedBox(height: 40),
+
+          // Email Field
+          TextFormField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: 'Email Address',
+              hintText: 'name@example.com',
+              prefixIcon: const Icon(Icons.email_outlined),
+              filled: true,
+              fillColor: Colors.grey[50], 
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+            validator: (value) => value == null || value.isEmpty ? 'Email is required' : null,
+          ).animate().fadeIn(delay: 200.ms),
+          const SizedBox(height: 20),
+
+          // Password Field
+          TextFormField(
+            controller: _passwordController,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onFieldSubmitted: (_) => _login(),
+            validator: (value) => value == null || value.isEmpty ? 'Password is required' : null,
+          ).animate().fadeIn(delay: 300.ms),
+          
+          const SizedBox(height: 32),
+
+          // Login Button
+          SizedBox(
+            height: 56,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2E236C),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              onPressed: _isLoading ? null : _login,
+              child: _isLoading
+                  ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+
+          const SizedBox(height: 24),
+          
+          // Footer Links
+          Center(
+            child: TextButton.icon(
+              onPressed: () => GoRouter.of(context).push('/about'),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              icon: const Icon(Icons.info_outline, size: 18),
+              label: const Text('About Us'),
+            ),
+          ),
+          // Team Name in Login Footer as well?
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'Runtime Terrors', 
+              style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold)
+            ),
+          ),
+        ],
+      ),
       ),
     );
   }

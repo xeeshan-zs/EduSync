@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import 'models/user_model.dart';
 import 'models/quiz_model.dart';
 import 'models/result_model.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/landing_page.dart';
 import 'screens/about_us_screen.dart';
 import 'screens/dashboards.dart';
 import 'screens/student/student_dashboard.dart';
@@ -24,6 +26,8 @@ import 'screens/admin/admin_dashboard.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
 import 'screens/admin/all_quizzes_screen.dart';
 import 'screens/common/profile_screen.dart';
+import 'screens/common/user_guide_screen.dart';
+import 'screens/common/contact_us_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,33 +59,59 @@ class MainAppRouter extends StatelessWidget {
     // Watch user provider to trigger redirects on auth state change
     final userProvider = context.watch<UserProvider>();
 
+    // Determine initial route based on Platform
+    // If Android or iOS (likely mobile app or mobile web), start at Login
+    // kIsWeb check is important if we want specific web behavior, but user said "phone view".
+    // Assuming "phone view" implies running on a phone.
+    bool isMobile = defaultTargetPlatform == TargetPlatform.android || 
+                    defaultTargetPlatform == TargetPlatform.iOS;
+    
     final router = GoRouter(
       refreshListenable: userProvider,
-      initialLocation: '/',
+      initialLocation: isMobile ? '/login' : '/',
       redirect: (context, state) {
         final isLoggedIn = userProvider.isLoggedIn;
-        final isLoggingIn = state.uri.toString() == '/login';
-        final isAbout = state.uri.toString() == '/about';
+        final path = state.uri.path;
+        final isLoggingIn = path == '/login';
+        final isAbout = path == '/about';
+        final isRoot = path == '/';
+        final isWelcome = path == '/welcome'; // Explicit Landing Page
         
-        if (userProvider.isLoading) return null; // Or specific splash path
+        if (userProvider.isLoading) return null; 
 
-        if (!isLoggedIn) {
-          return (isLoggingIn || isAbout) ? null : '/login';
-        }
-
-        // If logged in, prevent going to login, but allow About
-        if (isLoggingIn) {
+        // 1. If Logged In, redirect Login -> Dashboard
+        if (isLoggedIn && isLoggingIn) {
           return _getHomeRoute(userProvider.user?.role);
         }
 
-        // Handle root redirect
-        if (state.uri.toString() == '/') {
-          return _getHomeRoute(userProvider.user?.role);
+        // 2. Allowed Public Paths (About, Welcome)
+        if (isAbout || isWelcome) return null;
+
+        // 3. Root Handling
+        // If Logged In at Root, redirect to Dashboard
+        if (isRoot && isLoggedIn) {
+           return _getHomeRoute(userProvider.user?.role);
+        }
+        
+        // 4. If Guest at Root, stay at Root (Landing Page)
+        if (isRoot && !isLoggedIn) return null;
+
+        // 5. If Guest and not on public pages -> Login
+        if (!isLoggedIn && !isLoggingIn && !isRoot) {
+          return '/login';
         }
 
-        return null; // Allow navigation to other valid routes
+        return null; // Allow navigation
       },
       routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const LandingPage(),
+        ),
+        GoRoute(
+          path: '/welcome',
+          builder: (context, state) => const LandingPage(),
+        ),
         GoRoute(
           path: '/login',
           builder: (context, state) => const LoginScreen(),
@@ -160,6 +190,14 @@ class MainAppRouter extends StatelessWidget {
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
         ),
+        GoRoute(
+          path: '/user-guide',
+          builder: (context, state) => const UserGuideScreen(),
+        ),
+        GoRoute(
+          path: '/contact',
+          builder: (context, state) => const ContactUsScreen(),
+        ),
       ],
       // Theme Configuration with Google Fonts & Material 3
     );
@@ -170,7 +208,7 @@ class MainAppRouter extends StatelessWidget {
     }
 
     return MaterialApp.router(
-      title: 'Quiz App',
+      title: 'EduSync',
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

@@ -260,48 +260,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ],
                       ),
                       
-                      // Filters
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Role Filter Dropdown
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedRoleFilter,
-                                items: ['All', 'Student', 'Teacher', 'Admin']
-                                    .map((role) => DropdownMenuItem(
-                                          value: role,
-                                          child: Text(role.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) => setState(() => _selectedRoleFilter = val!),
+                        // Filters - Changed Row to Wrap to prevent overflow
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            // Role Filter Dropdown
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedRoleFilter,
+                                  items: ['All', 'Student', 'Teacher', 'Admin']
+                                      .map((role) => DropdownMenuItem(
+                                            value: role,
+                                            child: Text(role.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) => setState(() => _selectedRoleFilter = val!),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Search Bar
-                          SizedBox(
-                            width: 250,
-                            child: TextField(
-                              onChanged: (v) => setState(() => _searchQuery = v),
-                              decoration: InputDecoration(
-                                hintText: 'Search user...',
-                                prefixIcon: const Icon(Icons.search),
-                                filled: true,
-                                fillColor: Colors.grey.withOpacity(0.1),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                           
+                            // Search Bar
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 250),
+                              child: TextField(
+                                onChanged: (v) => setState(() => _searchQuery = v),
+                                decoration: InputDecoration(
+                                  hintText: 'Search user...',
+                                  prefixIcon: const Icon(Icons.search),
+                                  filled: true,
+                                  fillColor: Colors.grey.withOpacity(0.1),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -322,6 +324,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final u = users[index];
+                        final isSmallScreen = MediaQuery.of(context).size.width <= 600;
+
                         return Card(
                           elevation: 0,
                           margin: const EdgeInsets.only(bottom: 12),
@@ -331,72 +335,148 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
-                                  child: Icon(Icons.person, color: _getRoleColor(u.role)),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
+                            child: isSmallScreen
+                                ? Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                      const SizedBox(height: 4),
-                                      Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                      // Mobile: Header (Avatar + Info)
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 20,
+                                            backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
+                                            child: Icon(Icons.person, color: _getRoleColor(u.role)),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                const SizedBox(height: 4),
+                                                Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Divider(),
+                                      const SizedBox(height: 8),
+                                      // Mobile: Actions Row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                            // Badges
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: _getRoleColor(u.role).withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
+                                                ),
+                                              ],
+                                            ),
+                                            // Actions
+                                            Row(
+                                              children: [
+                                                Switch(
+                                                  value: !u.isDisabled, 
+                                                  activeColor: Colors.green,
+                                                  onChanged: (u.role == UserRole.admin) ? null : (val) {
+                                                     if (u.role == UserRole.super_admin) return;
+                                                      _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                  },
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
+                                                  tooltip: 'Details',
+                                                  onPressed: () => _showUserDetails(context, u),
+                                                )
+                                              ],
+                                            ),
+                                        ],
+                                      )
+                                    ],
+                                  )
+                                : Row(
+                                    // Desktop Layout
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: _getRoleColor(u.role).withOpacity(0.1),
+                                        child: Icon(Icons.person, color: _getRoleColor(u.role)),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                            const SizedBox(height: 4),
+                                            Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: _getRoleColor(u.role).withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                               Switch(
+                                                value: !u.isDisabled, 
+                                                activeColor: Colors.green,
+                                                onChanged: (u.role == UserRole.admin) ? null : (val) {
+                                                   if (u.role == UserRole.super_admin) return;
+                                                    _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
+                                                tooltip: 'Details',
+                                                onPressed: () => _showUserDetails(context, u),
+                                              )
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
-                                ),
-                                if (MediaQuery.of(context).size.width > 600) // Desktop/Tablet view
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: _getRoleColor(u.role).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(u.role.name.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getRoleColor(u.role))),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: u.isDisabled ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(u.isDisabled ? 'Disabled' : 'Active', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: u.isDisabled ? Colors.red : Colors.green)),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                         Switch(
-                                          value: !u.isDisabled, 
-                                          activeColor: Colors.green,
-                                          onChanged: (u.role == UserRole.admin) ? null : (val) {
-                                             if (u.role == UserRole.super_admin) return;
-                                              _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
-                                          tooltip: 'Details',
-                                          onPressed: () => _showUserDetails(context, u),
-                                        )
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
                           ),
                         );
                       },

@@ -183,9 +183,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         children: [
                           Icon(Icons.play_circle_fill, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 8),
-                          Text(
-                            'Available Quizzes',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          Flexible(
+                            child: Text(
+                              'Available Quizzes',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const Spacer(),
                           Container(

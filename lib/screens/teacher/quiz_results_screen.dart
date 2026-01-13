@@ -60,15 +60,34 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                    // Removed Manual Row
-                   const Text(
-                        'Quiz Results',
-                        style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                     children: [
+                       Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           const Text(
+                                'Quiz Results',
+                                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                           ),
+                           const SizedBox(height: 8),
+                           Text(
+                             'Results for: ${widget.quiz.title}',
+                             style: const TextStyle(color: Colors.white70, fontSize: 18),
+                           ),
+                         ],
+                       ),
+                       FilledButton.icon(
+                         onPressed: () => _showAnswerKey(context),
+                         icon: const Icon(Icons.key), 
+                         label: const Text('Answer Key'),
+                         style: FilledButton.styleFrom(
+                           backgroundColor: Colors.white.withOpacity(0.2), 
+                           foregroundColor: Colors.white,
+                         ),
+                       ),
+                     ],
                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Results for: ${widget.quiz.title}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 18),
-                  ),
                 ],
               ),
             ),
@@ -169,6 +188,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
                             child: ConstrainedBox(
                               constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 48), // Ensure full width
                               child: DataTable(
+                                showCheckboxColumn: false,
                                 headingRowColor: WidgetStateProperty.all(const Color(0xFF2E236C)), // Dark Header
                                 headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
                                 dataRowMinHeight: 60,
@@ -189,6 +209,9 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
                                   final isEven = index % 2 == 0;
                                   
                                   return DataRow(
+                                    onSelectChanged: (_) {
+                                       context.push('/review-quiz', extra: result);
+                                    },
                                     color: WidgetStateProperty.resolveWith((states) {
                                       // Alternating row colors
                                       return isEven ? const Color(0xFFF9FAFB) : Colors.white; 
@@ -236,6 +259,56 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
               ),
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  void _showAnswerKey(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Answer Key'),
+        content: SizedBox(
+          width: 500,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: widget.quiz.questions.length,
+            separatorBuilder: (c, i) => const Divider(),
+            itemBuilder: (context, index) {
+              final q = widget.quiz.questions[index];
+              return ListTile(
+                title: Text('Q${index + 1}: ${q.text}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    ...List.generate(q.options.length, (optIndex) {
+                      final isCorrect = optIndex == q.correctOptionIndex;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        decoration: isCorrect ? BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)) : null,
+                        child: Row(
+                          children: [
+                            Icon(
+                              isCorrect ? Icons.check_circle : Icons.circle_outlined, 
+                              size: 16, 
+                              color: isCorrect ? Colors.green : Colors.grey
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(q.options[optIndex], style: TextStyle(color: isCorrect ? Colors.green.shade900 : Colors.black87))),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
       ),
     );

@@ -45,6 +45,8 @@ class QuizAppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('My Profile'),
+            selected: GoRouterState.of(context).uri.path == '/profile',
+            selectedColor: Colors.deepPurple,
             onTap: () {
               Navigator.pop(context); 
               context.push('/profile');
@@ -52,31 +54,51 @@ class QuizAppDrawer extends StatelessWidget {
           ),
           
           ListTile(
+            leading: const Icon(Icons.home_rounded),
+            title: const Text('Home'),
+            selected: GoRouterState.of(context).uri.path == '/welcome' || GoRouterState.of(context).uri.path == '/',
+            selectedColor: Colors.deepPurple,
+            onTap: () {
+              Navigator.pop(context); 
+              context.go('/welcome');
+            },
+          ),
+
+          ListTile(
             leading: const Icon(Icons.dashboard_rounded),
             title: const Text('Dashboard'),
+            selected: (GoRouterState.of(context).uri.path.startsWith('/student') && !GoRouterState.of(context).uri.path.contains('history')) ||
+                      (GoRouterState.of(context).uri.path.startsWith('/teacher') && !GoRouterState.of(context).uri.path.contains('create-quiz')) ||
+                      GoRouterState.of(context).uri.path.startsWith('/admin') ||
+                      GoRouterState.of(context).uri.path.startsWith('/super_admin'),
+            selectedColor: Colors.deepPurple,
             onTap: () {
               Navigator.pop(context); // Close drawer
-               if (user!.role == UserRole.student) context.go('/student-dashboard');
-               if (user!.role == UserRole.teacher) context.go('/teacher-dashboard');
-               if (user!.role == UserRole.admin) context.go('/admin-dashboard');
-               if (user!.role == UserRole.super_admin) context.go('/super-admin-dashboard');
+               if (user!.role == UserRole.student) context.go('/student');
+               if (user!.role == UserRole.teacher) context.go('/teacher');
+               if (user!.role == UserRole.admin) context.go('/admin');
+               if (user!.role == UserRole.super_admin) context.go('/super_admin');
             },
           ),
           
           if (user!.role == UserRole.student)
             ListTile(
               leading: const Icon(Icons.history_edu),
-              title: const Text('My History'),
+              title: const Text('History'),
+              selected: GoRouterState.of(context).uri.path.contains('/student/history'),
+              selectedColor: Colors.deepPurple,
               onTap: () {
                 Navigator.pop(context);
                 context.push('/student/history');
               },
             ),
 
-          if (user!.role == UserRole.teacher || user!.role == UserRole.admin || user!.role == UserRole.super_admin)
+          if (user!.role == UserRole.teacher)
             ListTile(
               leading: const Icon(Icons.add_circle_outline),
               title: const Text('Create New Quiz'),
+              selected: GoRouterState.of(context).uri.path.contains('/teacher/create-quiz'),
+              selectedColor: Colors.deepPurple,
               onTap: () {
                 Navigator.pop(context);
                 context.push('/teacher/create-quiz');
@@ -85,17 +107,43 @@ class QuizAppDrawer extends StatelessWidget {
 
           if (user!.role == UserRole.admin || user!.role == UserRole.super_admin)
              ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('User Directory'),
+              leading: const Icon(Icons.assignment),
+              title: const Text('Quiz List'),
+              selected: GoRouterState.of(context).uri.path == '/all-quizzes', 
+              selectedColor: Colors.deepPurple,
               onTap: () {
                  Navigator.pop(context);
-                 // Already on dashboard usually for admins
+                 context.push('/all-quizzes', extra: true);
               },
             ),
 
+
+
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('User Guide'),
+            selected: GoRouterState.of(context).uri.path == '/user-guide',
+            selectedColor: Colors.deepPurple,
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/user-guide');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.contact_support_outlined),
+            title: const Text('Contact Us'),
+            selected: GoRouterState.of(context).uri.path == '/contact',
+            selectedColor: Colors.deepPurple,
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/contact');
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('About Us'),
+            title: const Text('About'),
+            selected: GoRouterState.of(context).uri.path == '/about',
+            selectedColor: Colors.deepPurple,
             onTap: () {
               Navigator.pop(context);
               context.push('/about');
