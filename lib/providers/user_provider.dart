@@ -51,16 +51,16 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile(String name, {Map<String, dynamic>? metadata}) async {
+  Future<void> updateProfile(String name, {Map<String, dynamic>? metadata, String? photoUrl}) async {
     if (_user == null) return;
     
     // Create updated user object
-    // Note: We need a copyWith method or just recreate manually
     final updatedUser = UserModel(
       uid: _user!.uid,
       email: _user!.email,
       name: name,
       role: _user!.role,
+      photoUrl: photoUrl ?? _user!.photoUrl,
       isDisabled: _user!.isDisabled,
       metadata: metadata ?? _user!.metadata,
     );
@@ -81,6 +81,17 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _authService.updatePassword(newPassword);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+     _isLoading = true;
+    notifyListeners();
+    try {
+      await _authService.sendPasswordResetEmail(email);
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -17,9 +17,11 @@ class ResultModel {
   final String studentName;
   final String studentRollNumber;
   final String className;
+  final int attemptNumber;
+  final bool isCancelled;
   final int score;
   final int totalMarks;
-  final Map<String, int> answers; // QuestionId : SelectedIndex
+  final Map<String, int> answers;
   final DateTime submittedAt;
 
   ResultModel({
@@ -34,6 +36,8 @@ class ResultModel {
     required this.totalMarks,
     required this.answers,
     required this.submittedAt,
+    this.attemptNumber = 1,
+    this.isCancelled = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +53,8 @@ class ResultModel {
       'totalMarks': totalMarks,
       'answers': answers,
       'submittedAt': submittedAt.millisecondsSinceEpoch,
+      'attemptNumber': attemptNumber,
+      'isCancelled': isCancelled,
     };
   }
 
@@ -67,6 +73,8 @@ class ResultModel {
       submittedAt: map['submittedAt'] is Timestamp
           ? (map['submittedAt'] as Timestamp).toDate()
           : DateTime.fromMillisecondsSinceEpoch(map['submittedAt'] ?? 0),
+      attemptNumber: map['attemptNumber'] ?? 1,
+      isCancelled: map['isCancelled'] ?? false,
     );
   }
 }

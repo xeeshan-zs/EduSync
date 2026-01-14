@@ -8,6 +8,7 @@ import '../../providers/user_provider.dart';
 import '../../models/result_model.dart';
 import '../../widgets/quiz_app_bar.dart';
 import '../../widgets/quiz_app_drawer.dart';
+import '../../widgets/skeleton_quiz_card.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -34,8 +35,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
       body: StreamBuilder<List<QuizModel>>(
         stream: _firestoreService.getQuizzesForStudent(),
         builder: (context, quizSnapshot) {
+          // Loading State with Skeleton
           if (quizSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+             return CustomScrollView(
+                slivers: [
+                   _buildHeroSection(context, user),
+                   _buildSearchSection(context),
+                   SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 400,
+                        mainAxisExtent: 280,
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => const SkeletonQuizCard(),
+                        childCount: 4, // Show 4 skeletons
+                      ),
+                    ),
+                   ),
+                ],
+             );
           }
           if (quizSnapshot.hasError) return Center(child: Text('Error: ${quizSnapshot.error}'));
 
@@ -61,7 +83,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
             stream: _firestoreService.getResultsForStudent(user.uid),
             builder: (context, resultSnapshot) {
               final results = resultSnapshot.data ?? [];
-              final attemptedQuizIds = results.map((r) => r.quizId).toSet();
+              // Only consider non-cancelled results as "Attempted" logic
+              final validResults = results.where((r) => !r.isCancelled).toList();
+              final attemptedQuizIds = validResults.map((r) => r.quizId).toSet();
               // Fallback for old data
               final attemptedQuizTitles = results.where((r) => r.quizId.isEmpty).map((r) => r.quizTitle).toSet();
 
@@ -74,106 +98,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
               return CustomScrollView(
                 slivers: [
                   // Hero Section
-                  SliverToBoxAdapter(
-                    child: Container(
-                      width: double.infinity,
-                      // Increased Padding Top for AppBar
-                      padding: const EdgeInsets.fromLTRB(24, 120, 24, 40),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1B2E),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF2E236C),
-                            Color(0xFF433D8B),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(32),
-                          bottomRight: Radius.circular(32),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Removed Manual Nav
-                          
-                          Text(
-                            'Welcome back, ${user.name}!',
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Ready to challenge yourself? Select an active quiz below or review your past achievements.',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildHeroSection(context, user),
 
                   // Controls Section (Search & Sort)
-                  SliverToBoxAdapter(
-                     child: Padding(
-                       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                       child: Row(
-                         children: [
-                           Expanded(
-                             child: TextField(
-                               onChanged: (val) => setState(() => _searchQuery = val),
-                               decoration: InputDecoration(
-                                 hintText: 'Search quizzes...',
-                                 prefixIcon: const Icon(Icons.search),
-                                 filled: true,
-                                 fillColor: Colors.white,
-                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                 border: OutlineInputBorder(
-                                   borderRadius: BorderRadius.circular(12),
-                                   borderSide: BorderSide.none,
-                                 ),
-                                 enabledBorder: OutlineInputBorder(
-                                   borderRadius: BorderRadius.circular(12),
-                                   borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                                 ),
-                               ),
-                             ),
-                           ),
-                           const SizedBox(width: 16),
-                           Container(
-                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                             decoration: BoxDecoration(
-                               color: Colors.white,
-                               borderRadius: BorderRadius.circular(12),
-                               border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                             ),
-                             child: DropdownButtonHideUnderline(
-                               child: DropdownButton<String>(
-                                 value: _sortOption,
-                                 icon: const Icon(Icons.sort),
-                                 borderRadius: BorderRadius.circular(12),
-                                 items: ['Title (A-Z)', 'Title (Z-A)', 'Duration (Shortest)', 'Duration (Longest)']
-                                     .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
-                                     .toList(),
-                                 onChanged: (val) {
-                                   if (val != null) setState(() => _sortOption = val);
-                                 },
-                               ),
-                             ),
-                           ),
-                         ],
-                       ),
-                     ),
-                  ),
+                  _buildSearchSection(context),
 
                   // Section Header
                   SliverToBoxAdapter(
@@ -244,6 +172,107 @@ class _StudentDashboardState extends State<StudentDashboard> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildHeroSection(BuildContext context, dynamic user) {
+    return SliverToBoxAdapter(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(24, 120, 24, 40),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1B2E),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF2E236C),
+              Color(0xFF433D8B),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Welcome back, ${user.name}!',
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Ready to challenge yourself? Select an active quiz below or review your past achievements.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchSection(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                onChanged: (val) => setState(() => _searchQuery = val),
+                decoration: InputDecoration(
+                  hintText: 'Search quizzes...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _sortOption,
+                  icon: const Icon(Icons.sort),
+                  borderRadius: BorderRadius.circular(12),
+                  items: ['Title (A-Z)', 'Title (Z-A)', 'Duration (Shortest)', 'Duration (Longest)']
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _sortOption = val);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

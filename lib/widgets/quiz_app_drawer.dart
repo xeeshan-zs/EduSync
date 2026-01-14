@@ -34,10 +34,15 @@ class QuizAppDrawer extends StatelessWidget {
               },
               child: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Text(
-                  user!.name.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E236C)),
-                ),
+                backgroundImage: user!.photoUrl != null && user!.photoUrl!.isNotEmpty
+                    ? NetworkImage(user!.photoUrl!)
+                    : null,
+                child: user!.photoUrl == null || user!.photoUrl!.isEmpty
+                    ? Text(
+                        user!.name.substring(0, 1).toUpperCase(),
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E236C)),
+                      )
+                    : null,
               ),
             ),
           ),
@@ -127,6 +132,16 @@ class QuizAppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               context.push('/user-guide');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.install_desktop, color: Colors.deepPurpleAccent),
+            title: const Text('Our App', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurpleAccent)),
+            selected: GoRouterState.of(context).uri.path == '/our-app',
+            selectedColor: Colors.deepPurple,
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/our-app');
             },
           ),
           ListTile(

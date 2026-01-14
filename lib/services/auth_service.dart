@@ -1,5 +1,5 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'firestore_service.dart';
@@ -55,5 +55,29 @@ class AuthService {
     User? currentUser = _auth.currentUser;
     if (currentUser == null) return null;
     return await _firestoreService.getUser(currentUser.uid);
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  // Create user using a secondary app instance to preserve current admin session
+  Future<String> createUserByAdmin(String email, String password) async {
+    FirebaseApp tempApp = await Firebase.initializeApp(
+      name: 'tempApp',
+      options: Firebase.app().options,
+    );
+
+    try {
+      UserCredential userCredential = await FirebaseAuth.instanceFor(app: tempApp)
+          .createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      return userCredential.user!.uid;
+    } finally {
+      await tempApp.delete();
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'providers/user_provider.dart';
 import 'models/user_model.dart';
 import 'models/quiz_model.dart';
 import 'models/result_model.dart';
+import 'services/firestore_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/landing_page.dart';
 import 'screens/about_us_screen.dart';
@@ -28,6 +29,7 @@ import 'screens/admin/all_quizzes_screen.dart';
 import 'screens/common/profile_screen.dart';
 import 'screens/common/user_guide_screen.dart';
 import 'screens/common/contact_us_screen.dart';
+import 'screens/common/our_app_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,33 +53,43 @@ class QuizApp extends StatelessWidget {
   }
 }
 
-class MainAppRouter extends StatelessWidget {
+class MainAppRouter extends StatefulWidget {
   const MainAppRouter({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Watch user provider to trigger redirects on auth state change
-    final userProvider = context.watch<UserProvider>();
+  State<MainAppRouter> createState() => _MainAppRouterState();
+}
 
-    // Determine initial route based on Platform
-    // If Android or iOS (likely mobile app or mobile web), start at Login
-    // kIsWeb check is important if we want specific web behavior, but user said "phone view".
-    // Assuming "phone view" implies running on a phone.
+class _MainAppRouterState extends State<MainAppRouter> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    final userProvider = context.read<UserProvider>();
+    
+    // Check platform for initial location default
     bool isMobile = defaultTargetPlatform == TargetPlatform.android || 
                     defaultTargetPlatform == TargetPlatform.iOS;
-    
-    final router = GoRouter(
+
+    _router = GoRouter(
       refreshListenable: userProvider,
       initialLocation: isMobile ? '/login' : '/',
+      debugLogDiagnostics: true, // Enable debug logs to see routing decisions
       redirect: (context, state) {
         final isLoggedIn = userProvider.isLoggedIn;
         final path = state.uri.path;
         final isLoggingIn = path == '/login';
         final isAbout = path == '/about';
         final isRoot = path == '/';
-        final isWelcome = path == '/welcome'; // Explicit Landing Page
-        
-        if (userProvider.isLoading) return null; 
+        final isWelcome = path == '/welcome';
+
+        // Wait for loading to finish before making decisions
+        // Note: We handle the loading spinner in build(), but redirect might run.
+        // If loading, returning null allows current path (or initial) to be processed? 
+        // Actually if we redirect during loading, we might mess up. 
+        // But if isLoading is true, build() shows Material app.
+        if (userProvider.isLoading) return null;
 
         // 1. If Logged In, redirect Login -> Dashboard
         if (isLoggedIn && isLoggingIn) {
@@ -140,10 +152,17 @@ class MainAppRouter extends StatelessWidget {
               },
             ),
             GoRoute(
-              path: 'results',
+              path: 'results/:id',
               builder: (context, state) {
-                final quiz = state.extra as QuizModel;
-                return QuizResultsScreen(quiz: quiz);
+                final quiz = state.extra as QuizModel?;
+                final quizId = state.pathParameters['id']!;
+                
+                if (quiz != null) return QuizResultsScreen(quiz: quiz);
+
+                return QuizDataLoader(
+                  quizId: quizId, 
+                  builder: (quiz) => QuizResultsScreen(quiz: quiz)
+                );
               },
             ),
           ],
@@ -161,14 +180,16 @@ class MainAppRouter extends StatelessWidget {
         GoRoute(
           path: '/attempt-quiz',
           builder: (context, state) {
-            final quiz = state.extra as QuizModel;
-            return QuizAttemptScreen(quiz: quiz);
+             final quiz = state.extra as QuizModel?;
+             if (quiz == null) return const Scaffold(body: Center(child: Text('Error: Quiz data missing')));
+             return QuizAttemptScreen(quiz: quiz);
           },
         ),
         GoRoute(
           path: '/review-quiz',
           builder: (context, state) {
-            final result = state.extra as ResultModel;
+            final result = state.extra as ResultModel?;
+            if (result == null) return const Scaffold(body: Center(child: Text('Error: Result data missing')));
             return ReviewQuizScreen(result: result);
           },
         ),
@@ -182,10 +203,17 @@ class MainAppRouter extends StatelessWidget {
         GoRoute(
           path: '/quiz-results/:id',
           builder: (context, state) {
-            final quiz = state.extra as QuizModel;
-            return QuizResultsScreen(quiz: quiz);
+            final quiz = state.extra as QuizModel?;
+            final quizId = state.pathParameters['id']!;
+            
+            if (quiz != null) return QuizResultsScreen(quiz: quiz);
+
+            return QuizDataLoader(
+              quizId: quizId, 
+              builder: (quiz) => QuizResultsScreen(quiz: quiz)
+            );
           },
-        ),
+        ),       
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
@@ -195,26 +223,41 @@ class MainAppRouter extends StatelessWidget {
           builder: (context, state) => const UserGuideScreen(),
         ),
         GoRoute(
+          path: '/our-app',
+          builder: (context, state) => const OurAppScreen(),
+        ),
+        GoRoute(
           path: '/contact',
           builder: (context, state) => const ContactUsScreen(),
         ),
       ],
-      // Theme Configuration with Google Fonts & Material 3
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
 
     if (userProvider.isLoading) {
-      return const MaterialApp(
-          home: Scaffold(body: Center(child: CircularProgressIndicator())));
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
     return MaterialApp.router(
       title: 'EduSync',
-      routerConfig: router,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4), // Deep Purple base
+          seedColor: const Color(0xFF6750A4), 
           brightness: Brightness.light,
           primary: const Color(0xFF6750A4),
           secondary: const Color(0xFF625B71),
@@ -222,19 +265,13 @@ class MainAppRouter extends StatelessWidget {
           surface: const Color(0xFFFFFBFE),
           background: const Color(0xFFFFFBFE),
         ),
-        textTheme: GoogleFonts.outfitTextTheme(), // Modern geometric sans
+        textTheme: GoogleFonts.outfitTextTheme(),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Colors.transparent, // For slivers
+          backgroundColor: Colors.transparent,
         ),
-        // cardTheme: CardTheme(
-        //   elevation: 0, 
-        //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        //   color: const Color(0xFFF3F0F5), 
-        //   margin: const EdgeInsets.symmetric(vertical: 8),
-        // ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
@@ -274,7 +311,50 @@ class MainAppRouter extends StatelessWidget {
       case UserRole.student:
         return '/student';
       default:
-        return '/login'; // Or an error page
+        return '/login'; 
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// HELPER: Quiz Data Loader (Handles Missing State on Reload/Deep Link)
+// -----------------------------------------------------------------------------
+
+class QuizDataLoader extends StatelessWidget {
+  final String quizId;
+  final Widget Function(QuizModel quiz) builder;
+
+  const QuizDataLoader({super.key, required this.quizId, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FutureBuilder<QuizModel?>(
+        future: FirestoreService().getQuizById(quizId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || snapshot.data == null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error loading quiz: ${snapshot.error ?? "Not found"}'),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text('Go Home'),
+                  ),
+                ],
+              ),
+            );
+          }
+          return builder(snapshot.data!);
+        },
+      ),
+    );
   }
 }

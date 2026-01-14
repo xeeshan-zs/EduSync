@@ -5,6 +5,7 @@ class UserModel {
   final String uid;
   final String email;
   final String name;
+  final String? photoUrl; // New field
   final UserRole role;
   final bool isDisabled;
   final Map<String, dynamic> metadata;
@@ -14,6 +15,7 @@ class UserModel {
     required this.email,
     required this.name,
     required this.role,
+    this.photoUrl,
     this.isDisabled = false,
     this.metadata = const {},
   });
@@ -23,6 +25,7 @@ class UserModel {
       'uid': uid,
       'email': email,
       'name': name,
+      'photoUrl': photoUrl,
       'role': role.name, // Store as string
       'isDisabled': isDisabled,
       'metadata': metadata,
@@ -34,6 +37,7 @@ class UserModel {
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
       name: map['name'] ?? '',
+      photoUrl: map['photoUrl'],
       role: UserRole.values.firstWhere(
         (e) => e.name == (map['role'] ?? 'unknown'),
         orElse: () => UserRole.unknown,

@@ -407,7 +407,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                       padding: const EdgeInsets.symmetric(vertical: 0), // Compact
                       minimumSize: const Size(0, 36)
                     ),
-                    onPressed: () => context.push('/teacher/results', extra: quiz),
+                    onPressed: () => context.push('/teacher/results/${quiz.id}', extra: quiz),
                     icon: const Icon(Icons.bar_chart, size: 16),
                     label: const Text('Results'),
                   ),

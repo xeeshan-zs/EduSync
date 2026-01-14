@@ -99,14 +99,19 @@ class QuizAppBar extends StatelessWidget implements PreferredSizeWidget {
                     CircleAvatar(
                       radius: 16,
                       backgroundColor: Colors.white,
-                      child: Text(
-                        user!.name.substring(0, 1).toUpperCase(),
-                        style: TextStyle(
-                          color: theme.primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                      backgroundImage: user!.photoUrl != null && user!.photoUrl!.isNotEmpty
+                          ? NetworkImage(user!.photoUrl!)
+                          : null,
+                      child: user!.photoUrl == null || user!.photoUrl!.isEmpty
+                          ? Text(
+                              user!.name.substring(0, 1).toUpperCase(),
+                              style: TextStyle(
+                                color: theme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            )
+                          : null,
                     ),
                     if (isDesktop) ...[
                       const SizedBox(width: 12),
@@ -237,6 +242,13 @@ class QuizAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     // Common Links (Guest & Logged In)
+    links.add(_NavTextButton(
+      label: 'Our App',
+      icon: Icons.install_desktop,
+      isActive: currentPath == '/our-app',
+      onPressed: () => context.push('/our-app'),
+    ));
+
     links.add(_NavTextButton(
       label: 'Guide',
       icon: Icons.help_outline,

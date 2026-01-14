@@ -1,8 +1,11 @@
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/user_provider.dart';
 import '../../models/user_model.dart';
+import '../../services/cloudinary_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,13 +18,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  late TextEditingController _rollNoController; // For students
+  late TextEditingController _rollNoController;
   
   // Password fields
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _showPasswordFields = false;
   bool _isLoading = false;
+  bool _isUploadingImage = false;
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -42,6 +48,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image == null) return;
+
+      setState(() => _isUploadingImage = true);
+
+      final imageBytes = await image.readAsBytes();
+      final imageUrl = await CloudinaryService().uploadImage(imageBytes);
+      
+      if (imageUrl != null) {
+        if (!mounted) return;
+        await context.read<UserProvider>().updateProfile(
+          _nameController.text.trim(),
+          photoUrl: imageUrl,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile picture updated!')));
+      } else {
+         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload image')));
+      }
+    } catch (e) {
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -50,7 +84,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userProvider = context.read<UserProvider>();
       
       // 1. Update Profile Info
-      // Construct metadata map, preserving existing but updating specific fields
       final currentMetadata = Map<String, dynamic>.from(userProvider.user?.metadata ?? {});
       if (_rollNoController.text.isNotEmpty) {
         currentMetadata['rollNumber'] = _rollNoController.text.trim();
@@ -73,7 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: Colors.green),
         );
-        // Optional: Close password fields
         setState(() {
           _showPasswordFields = false;
           _passwordController.clear();
@@ -115,17 +147,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Center(
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                          child: Text(
-                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                            style: TextStyle(
-                              fontSize: 32, 
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              backgroundImage: user.photoUrl != null && user.photoUrl!.isNotEmpty 
+                                  ? NetworkImage(user.photoUrl!) 
+                                  : null,
+                              child: user.photoUrl == null || user.photoUrl!.isEmpty
+                                  ? Text(
+                                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                                      style: TextStyle(
+                                        fontSize: 32, 
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.primary
+                                      ),
+                                    )
+                                  : null,
                             ),
-                          ),
+                            if (_isUploadingImage)
+                              const Positioned.fill(child: CircularProgressIndicator()),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickAndUploadImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         Container(
@@ -159,16 +218,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
-                    readOnly: true, // Email usually cannot be changed easily
+                    readOnly: true, 
                     decoration: const InputDecoration(
                       labelText: 'Email Address', 
                       prefixIcon: Icon(Icons.email),
                       filled: true,
-                      fillColor: Colors.black12, // Greay out
+                      fillColor: Colors.black12, 
                     ),
                   ),
                   
-                   // Conditional Fields based on role
                   if (user.role == UserRole.student) ...[
                     const SizedBox(height: 16),
                     TextFormField(

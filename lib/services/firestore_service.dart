@@ -16,9 +16,14 @@ class FirestoreService {
       return null;
     } catch (e) {
       print("Error fetching user: $e");
+    } catch (e) {
+      print("Error fetching user: $e");
       return null;
-      // You might want to rethrow for UI handling
     }
+  }
+
+  Future<DocumentSnapshot> getUserDoc(String uid) {
+    return _db.collection('users').doc(uid).get();
   }
 
   // --- Quiz Methods ---
@@ -42,7 +47,52 @@ class FirestoreService {
   }
   
   // Method for teacher/admin to see all quizzes
-   Stream<List<QuizModel>> getAllQuizzes() {
+  // Paginated Quizzes Fetch
+  Future<List<QuizModel>> getQuizzesPaginated({
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+    String? searchQuery,
+  }) async {
+    Query query = _db.collection('quizzes');
+
+    // Search or Default Sort
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      query = query
+          .orderBy('title')
+          .startAt([searchQuery])
+          .endAt(['$searchQuery\uf8ff']);
+    } else {
+      // Default: Newest first
+      query = query.orderBy('createdAt', descending: true);
+    }
+
+    // Pagination
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+
+    query = query.limit(limit);
+
+    try {
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id; // Ensure ID is set
+        return QuizModel.fromMap(data);
+      }).toList();
+    } catch (e) {
+      print('Firestore Page Quiz Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<DocumentSnapshot> getQuizDoc(String quizId) async {
+    return await _db.collection('quizzes').doc(quizId).get();
+  }
+
+  Stream<List<QuizModel>> getAllQuizzes() {
+    // Deprecated for large datasets, kept for backward compatibility if needed
+    // or small lists.
     return _db
         .collection('quizzes')
         .snapshots()
@@ -100,6 +150,18 @@ class FirestoreService {
             .map((doc) => ResultModel.fromMap(doc.data()))
             .toList());
   }
+
+  Future<void> cancelResult(String resultId) async {
+    await _db.collection('results').doc(resultId).update({'isCancelled': true});
+  }
+
+  Future<int> getAttemptCount(String studentId, String quizId) async {
+    final snapshot = await _db.collection('results')
+        .where('studentId', isEqualTo: studentId)
+        .where('quizId', isEqualTo: quizId)
+        .get();
+    return snapshot.docs.length;
+  }
   
   // --- User Management (Admin) ---
   
@@ -125,5 +187,106 @@ class FirestoreService {
      // OR we rely on a specific flow. 
      // Since this is a detailed app, we simply save the user doc here.
      await _db.collection('users').doc(user.uid).set(user.toMap());
+  }
+
+  // Paginated Users Fetch
+  Future<List<UserModel>> getUsersPaginated({
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+    String? roleFilter,
+    List<String>? allowedRoles, // New: For "whereIn" queries
+    String? searchQuery,
+  }) async {
+    Query query = _db.collection('users');
+
+    // Applied Filters
+    if (roleFilter != null && roleFilter != 'All') {
+       // specific role selected
+       query = query.where('role', isEqualTo: roleFilter.toLowerCase());
+    } else if (allowedRoles != null && allowedRoles.isNotEmpty) {
+       // list of allowed roles (e.g. for Admin who can't see Super Admin)
+       query = query.where('role', whereIn: allowedRoles.map((e) => e.toLowerCase()).toList());
+    }
+
+    // Search or Sort
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      // Case-sensitive prefix search (limitations apply)
+      // Best practice: store a 'name_lowercase' field. 
+      query = query
+          .orderBy('name')
+          .startAt([searchQuery])
+          .endAt(['$searchQuery\uf8ff']);
+    } else {
+      // Default Sort
+      query = query.orderBy('name');
+    }
+
+    // Pagination
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+
+    // Limit
+    query = query.limit(limit);
+
+    try {
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) {
+         final data = doc.data() as Map<String, dynamic>;
+         return UserModel.fromMap(data);
+      }).toList();
+    } catch (e) {
+      print('Firestore Pagination Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteUser(String uid) async {
+    // 1. Delete associated results (optional but good for cleanup)
+    final resultsSnapshot = await _db.collection('results').where('studentId', isEqualTo: uid).get();
+    for (final doc in resultsSnapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    // 2. Delete the user document
+    await _db.collection('users').doc(uid).delete();
+  }
+
+  Future<bool> checkEmailExists(String email) async {
+    final snapshot = await _db.collection('users').where('email', isEqualTo: email).limit(1).get();
+    return snapshot.docs.isNotEmpty;
+  }
+
+  Future<bool> checkRollNumberExists(String rollNumber) async {
+    // Note: 'metadata.rollNumber' requires an index or map navigation. 
+    // If metadata is a map field, we use dot notation.
+    final snapshot = await _db.collection('users').where('metadata.rollNumber', isEqualTo: rollNumber).limit(1).get();
+    return snapshot.docs.isNotEmpty;
+  }
+  
+  // --- App Settings (Links) ---
+  
+  Future<Map<String, String>> getAppLinks() async {
+    try {
+      final doc = await _db.collection('settings').doc('app_links').get();
+      if (doc.exists && doc.data() != null) {
+        return Map<String, String>.from(doc.data()!);
+      }
+    } catch (e) {
+      print('Error fetching app links: $e');
+    }
+    return {
+      'windows': '',
+      'android': '',
+      'web': '',
+    };
+  }
+
+  Future<void> updateAppLinks(String windows, String android, String web) async {
+    await _db.collection('settings').doc('app_links').set({
+      'windows': windows,
+      'android': android,
+      'web': web,
+    }, SetOptions(merge: true));
   }
 }
