@@ -10,8 +10,8 @@ plugins {
 
 android {
     namespace = "com.quizapp.quiz_app"
-    compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
