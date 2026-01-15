@@ -45,17 +45,17 @@ class _LoginScreenState extends State<LoginScreen> {
         
         // Parse Firebase error messages
         final errorStr = e.toString().toLowerCase();
-        if (errorStr.contains('user-not-found') || errorStr.contains('user not found')) {
+        if (errorStr.contains('user-not-found') || errorStr.contains('user not found') || errorStr.contains('record not found')) {
           errorMessage = 'No account found with this email';
         } else if (errorStr.contains('wrong-password') || errorStr.contains('invalid-credential')) {
           errorMessage = 'Incorrect password';
         } else if (errorStr.contains('invalid-email')) {
           errorMessage = 'Invalid email format';
-        } else if (errorStr.contains('user-disabled')) {
-          errorMessage = 'This account has been disabled';
+        } else if (errorStr.contains('user-disabled') || errorStr.contains('account has been disabled')) {
+          errorMessage = 'This account has been disabled. Contact admin.';
         } else if (errorStr.contains('too-many-requests')) {
           errorMessage = 'Too many attempts. Please try again later';
-        } else if (errorStr.contains('network')) {
+        } else if (errorStr.contains('network') || errorStr.contains('connection')) {
           errorMessage = 'Network error. Check your connection';
         } else {
           // Show the original error if it's not a common case
@@ -247,6 +247,21 @@ class _LoginScreenState extends State<LoginScreen> {
                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
                ),
              ),
+          
+          Align(
+            alignment: Alignment.topLeft,
+            child: TextButton.icon(
+              onPressed: () => context.go('/'),
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Back to Home'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[600],
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
 
           Text(
             'Welcome Back!',

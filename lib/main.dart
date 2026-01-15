@@ -96,8 +96,12 @@ class _MainAppRouterState extends State<MainAppRouter> {
           return _getHomeRoute(userProvider.user?.role);
         }
 
-        // 2. Allowed Public Paths (About, Welcome)
-        if (isAbout || isWelcome) return null;
+        // 2. Allowed Public Paths (About, Welcome, Our App, Contact)
+        final isPublic = isAbout || isWelcome || 
+                         path == '/our-app' || 
+                         path == '/contact';
+
+        if (isPublic) return null;
 
         // 3. Root Handling
         // If Logged In at Root, redirect to Dashboard

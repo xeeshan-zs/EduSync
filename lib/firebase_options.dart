@@ -80,11 +80,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_WINDOWS_API_KEY',
-    appId: 'REPLACE_WITH_WINDOWS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_MESSAGING_SENDER_ID',
+    apiKey: 'AIzaSyCwaCazxXh94E3FRAOqnPLNXOeFROR9wiU',
+    appId: '1:164927083458:web:de4c2be8e799e287177c5b',
+    messagingSenderId: '164927083458',
     projectId: 'battery-quiz',
     authDomain: 'battery-quiz.firebaseapp.com',
-    storageBucket: 'battery-quiz.appspot.com',
+    storageBucket: 'battery-quiz.firebasestorage.app',
+    measurementId: 'G-BJ70ZWB0CX',
   );
 }

@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "edu-sync",
     "public": "build/web",
     "ignore": [
       "firebase.json",
