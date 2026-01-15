@@ -408,9 +408,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                               Switch(
                                                 value: !u.isDisabled, 
                                                 activeColor: Colors.green,
-                                                onChanged: (u.role == UserRole.admin) ? null : (val) {
+                                                onChanged: (u.role == UserRole.admin) ? null : (val) async {
                                                    if (u.role == UserRole.super_admin) return;
-                                                    _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                   try {
+                                                     await _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                     if (mounted) {
+                                                       setState(() {
+                                                         final index = _users.indexWhere((user) => user.uid == u.uid);
+                                                         if (index != -1) {
+                                                           _users[index] = _users[index].copyWith(isDisabled: !u.isDisabled);
+                                                         }
+                                                       });
+                                                     }
+                                                   } catch (e) {
+                                                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                                   }
                                                 },
                                               ),
                                               IconButton(
@@ -473,9 +485,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                              Switch(
                                               value: !u.isDisabled, 
                                               activeColor: Colors.green,
-                                              onChanged: (u.role == UserRole.admin) ? null : (val) {
+                                              onChanged: (u.role == UserRole.admin) ? null : (val) async {
                                                  if (u.role == UserRole.super_admin) return;
-                                                  _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                 try {
+                                                   await _firestoreService.toggleUserDisabled(u.uid, u.isDisabled);
+                                                   if (mounted) {
+                                                     setState(() {
+                                                       final index = _users.indexWhere((user) => user.uid == u.uid);
+                                                       if (index != -1) {
+                                                         _users[index] = _users[index].copyWith(isDisabled: !u.isDisabled);
+                                                       }
+                                                     });
+                                                   }
+                                                 } catch (e) {
+                                                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                                 }
                                               },
                                             ),
                                             IconButton(

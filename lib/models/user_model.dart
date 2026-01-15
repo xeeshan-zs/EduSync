@@ -20,6 +20,26 @@ class UserModel {
     this.metadata = const {},
   });
 
+  UserModel copyWith({
+    String? uid,
+    String? email,
+    String? name,
+    String? photoUrl,
+    UserRole? role,
+    bool? isDisabled,
+    Map<String, dynamic>? metadata,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      photoUrl: photoUrl ?? this.photoUrl,
+      role: role ?? this.role,
+      isDisabled: isDisabled ?? this.isDisabled,
+      metadata: metadata ?? this.metadata,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
