@@ -35,9 +35,10 @@
 
   <style>
     body {
-      background-color: #FAFAFA;
+      background: linear-gradient(to bottom right, #1E1B2E, #2E236C);
       margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
     }
 
     .loading-container {
@@ -51,34 +52,107 @@
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      background-color: #FAFAFA;
-      transition: opacity 0.5s ease-out;
+      background: linear-gradient(to bottom right, #1E1B2E, #2E236C);
+      transition: opacity 0.6s ease-out;
     }
 
-    .loader {
-      width: 50px;
-      height: 50px;
-      border: 4px solid #E0E0E0;
-      border-top: 4px solid #6B46C1;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
     }
 
-    .loading-text {
-      margin-top: 20px;
-      color: #6B46C1;
-      font-size: 24px;
-      font-weight: 600;
+    .app-logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 24px;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      /* Stronger shadow for dark mode */
+      animation: bounce 2s infinite ease-in-out;
+    }
+
+    .app-name {
+      font-size: 36px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 1.5px;
+      margin: 0;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .progress-bar-container {
+      width: 240px;
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 32px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #A78BFA;
+      /* Lighter purple for contrast */
+      border-radius: 10px;
+      animation: progress 2.5s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+    }
+
+    .loading-status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #94A3B8;
+      font-weight: 500;
+      min-height: 20px;
+      /* Prevent layout shift */
+      text-align: center;
       letter-spacing: 0.5px;
     }
 
-    @keyframes spin {
+    .splash-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 14px;
+      color: #64748B;
+      opacity: 0.8;
+    }
+
+    .dev-name {
+      font-weight: 600;
+      color: #A78BFA;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-15px);
+      }
+    }
+
+    @keyframes progress {
       0% {
-        transform: rotate(0deg);
+        width: 0%;
+        transform: translateX(-10%);
+      }
+
+      50% {
+        width: 70%;
       }
 
       100% {
-        transform: rotate(360deg);
+        width: 100%;
+        transform: translateX(10%);
       }
     }
   </style>
@@ -86,8 +160,19 @@
 
 <body>
   <div class="loading-container">
-    <div class="loader"></div>
-    <div class="loading-text">EduSync</div>
+    <div class="logo-container">
+      <img src="icons/Icon-192.png" alt="EduSync Logo" class="app-logo">
+      <div class="app-name">EduSync</div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar"></div>
+      </div>
+      <div id="loading-status" class="loading-status">Getting things ready...</div>
+    </div>
+
+    <div class="splash-footer">
+      Developed by <span class="dev-name">Runtime Terrors</span>
+    </div>
   </div>
 
   <script src="flutter_bootstrap.js" async></script>
@@ -99,7 +184,31 @@
       // e.preventDefault(); 
       window.deferredPrompt = e;
       console.log('beforeinstallprompt captured in JS!');
+      console.log('beforeinstallprompt captured in JS!');
     });
+
+    // Dynamic Loading Text Cycle
+    const loadingMessages = [
+      "Initializing EduSync...",
+      "Connecting to the server...",
+      "Loading resources...",
+      "Getting things ready...",
+      "Almost there..."
+    ];
+
+    let messageIndex = 0;
+    const statusElement = document.getElementById('loading-status');
+
+    if (statusElement) {
+      setInterval(() => {
+        messageIndex = (messageIndex + 1) % loadingMessages.length;
+        statusElement.style.opacity = '0';
+        setTimeout(() => {
+          statusElement.innerText = loadingMessages[messageIndex];
+          statusElement.style.opacity = '1';
+        }, 200);
+      }, 1500);
+    }
 
     // Remove loading indicator when Flutter is ready
     const loaderInterval = setInterval(() => {
