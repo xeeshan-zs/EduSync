@@ -213,8 +213,9 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final members = snapshot.data ?? [];
-              
+              // Create a mutable copy for reordering
+              final members = List<TeamMemberModel>.from(snapshot.data ?? []);
+
               if (members.isEmpty) {
                 return Container(
                   padding: const EdgeInsets.all(40),
@@ -229,14 +230,26 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
                 );
               }
 
-              return ListView.separated(
+              return ReorderableListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: members.length,
-                separatorBuilder: (c, i) => const SizedBox(height: 16),
+                onReorder: (oldIndex, newIndex) {
+                   if (oldIndex < newIndex) newIndex -= 1;
+                   final item = members.removeAt(oldIndex);
+                   members.insert(newIndex, item);
+                   
+                   // Optimistic update logic if needed, but here we just sync with DB
+                   _firestoreService.updateTeamOrder(members);
+                },
+                buildDefaultDragHandles: false,
                 itemBuilder: (context, index) {
                   final member = members[index];
-                  return _buildMemberCard(context, member);
+                  return Padding(
+                    key: ValueKey(member.id),
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: _buildMemberCard(context, member, index),
+                  );
                 },
               );
             },
@@ -246,9 +259,9 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
     ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildMemberCard(BuildContext context, TeamMemberModel member) {
+  Widget _buildMemberCard(BuildContext context, TeamMemberModel member, int index) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8), // Reduced padding to accommodate handle
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -256,6 +269,15 @@ class _ManageAppContentScreenState extends State<ManageAppContentScreen> {
       ),
       child: Row(
         children: [
+          // Drag Handle
+          ReorderableDragStartListener(
+            index: index,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              color: Colors.transparent, // Hit test area
+              child: const Icon(Icons.drag_indicator, color: Colors.grey),
+            ),
+          ),
           // Avatar
           Container(
             width: 60, height: 60,

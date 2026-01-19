@@ -318,14 +318,31 @@ class FirestoreService {
   }
 
   Future<void> addTeamMember(TeamMemberModel member) async {
-    // If id is empty, let firestore generate it, but our model has id. 
-    // Usually we generate ID first or let firestore do it.
-    // Here let's assume we pass empty string and use .add(), or generate one.
-    if (member.id.isEmpty) {
-      await _db.collection('team_members').add(member.toMap());
-    } else {
-      await _db.collection('team_members').doc(member.id).set(member.toMap());
+    // Auto-increment order
+    final snapshot = await _db.collection('team_members').orderBy('order', descending: true).limit(1).get();
+    int nextOrder = 0;
+    if (snapshot.docs.isNotEmpty) {
+      nextOrder = (snapshot.docs.first.data()['order'] as int? ?? 0) + 1;
     }
+
+    final newMemberData = member.toMap();
+    newMemberData['order'] = nextOrder;
+
+    if (member.id.isEmpty) {
+      await _db.collection('team_members').add(newMemberData);
+    } else {
+      await _db.collection('team_members').doc(member.id).set(newMemberData);
+    }
+  }
+
+  Future<void> updateTeamOrder(List<TeamMemberModel> members) async {
+    final batch = _db.batch();
+    for (int i = 0; i < members.length; i++) {
+        // Create a new map with the updated order
+        // We can't modify the model directly as it might be final, so we create a map update
+        batch.update(_db.collection('team_members').doc(members[i].id), {'order': i});
+    }
+    await batch.commit();
   }
 
   Future<void> updateTeamMember(TeamMemberModel member) async {
