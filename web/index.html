@@ -20,6 +20,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="EduSync - Interactive Quiz & Learning Platform">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -53,7 +54,7 @@
       align-items: center;
       z-index: 9999;
       background: linear-gradient(to bottom right, #1E1B2E, #2E236C);
-      transition: opacity 0.6s ease-out;
+      transition: opacity 0.4s ease-out;
     }
 
     .logo-container {
@@ -155,6 +156,24 @@
         transform: translateX(10%);
       }
     }
+
+    @media (max-width: 600px) {
+      .app-logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 16px;
+      }
+
+      .app-name {
+        font-size: 28px;
+        letter-spacing: 1px;
+      }
+
+      .progress-bar-container {
+        width: 180px;
+        margin-top: 24px;
+      }
+    }
   </style>
 </head>
 
@@ -170,9 +189,6 @@
       <div id="loading-status" class="loading-status">Getting things ready...</div>
     </div>
 
-    <div class="splash-footer">
-      Developed by <span class="dev-name">Runtime Terrors</span>
-    </div>
   </div>
 
   <script src="flutter_bootstrap.js" async></script>
@@ -183,7 +199,6 @@
       // Do NOT preventDefault() - let the browser show its native icon/bar too.
       // e.preventDefault(); 
       window.deferredPrompt = e;
-      console.log('beforeinstallprompt captured in JS!');
       console.log('beforeinstallprompt captured in JS!');
     });
 
@@ -207,7 +222,7 @@
           statusElement.innerText = loadingMessages[messageIndex];
           statusElement.style.opacity = '1';
         }, 200);
-      }, 1500);
+      }, 1000);
     }
 
     // Remove loading indicator when Flutter is ready
@@ -218,10 +233,10 @@
         const loader = document.querySelector('.loading-container');
         if (loader) {
           loader.style.opacity = '0';
-          setTimeout(() => loader.remove(), 500);
+          setTimeout(() => loader.remove(), 400);
         }
       }
-    }, 200);
+    }, 50);
   </script>
 </body>
 

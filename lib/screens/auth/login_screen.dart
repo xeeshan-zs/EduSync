@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/user_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../models/app_settings_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -377,9 +379,14 @@ class _LoginScreenState extends State<LoginScreen> {
           // Team Name in Login Footer as well?
           const SizedBox(height: 24),
           Center(
-            child: Text(
-              'Runtime Terrors', 
-              style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold)
+            child: StreamBuilder<AppSettingsModel>(
+              stream: FirestoreService().getAppSettings(),
+              builder: (context, snapshot) {
+                return Text(
+                  snapshot.data?.teamName ?? 'Runtime Terrors',
+                  style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold)
+                );
+              }
             ),
           ),
         ],

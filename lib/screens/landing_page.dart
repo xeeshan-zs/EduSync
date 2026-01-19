@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/user_provider.dart';
 import '../widgets/quiz_app_bar.dart';
 import '../widgets/quiz_app_drawer.dart';
+import '../services/firestore_service.dart';
+import '../models/app_settings_model.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -264,11 +266,17 @@ class LandingPage extends StatelessWidget {
                               const SizedBox(height: 60),
                               const Divider(color: Colors.white12),
                               const SizedBox(height: 32),
-                              Text(
-                                '© 2026 EduSync. Developed by Runtime Terrors.',
-                                style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                                textAlign: TextAlign.center,
-                              ),
+                                StreamBuilder<AppSettingsModel>(
+                                  stream: FirestoreService().getAppSettings(),
+                                  builder: (context, snapshot) {
+                                    final teamName = snapshot.data?.teamName ?? 'Runtime Terrors';
+                                    return Text(
+                                      '© 2026 EduSync. Developed by $teamName.',
+                                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                      textAlign: TextAlign.center,
+                                    );
+                                  }
+                                ),
                             ],
                           ),
                         ),

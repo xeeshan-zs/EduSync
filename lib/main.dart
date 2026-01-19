@@ -25,6 +25,7 @@ import 'screens/teacher/create_quiz_screen.dart';
 import 'screens/teacher/quiz_results_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/super_admin/super_admin_dashboard.dart';
+import 'screens/super_admin/manage_app_content_screen.dart';
 import 'screens/admin/all_quizzes_screen.dart';
 import 'screens/common/profile_screen.dart';
 import 'screens/common/user_guide_screen.dart';
@@ -170,6 +171,12 @@ class _MainAppRouterState extends State<MainAppRouter> {
         GoRoute(
           path: '/super_admin',
           builder: (context, state) => const SuperAdminDashboard(),
+          routes: [
+             GoRoute(
+               path: 'manage-app-content',
+               builder: (context, state) => const ManageAppContentScreen(),
+             ),
+          ],
         ),
         GoRoute(
           path: '/admin',

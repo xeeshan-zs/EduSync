@@ -1,35 +1,48 @@
-
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 
 import '../config/app_config.dart';
 
 class CloudinaryService {
-  final String _cloudName = AppConfig.cloudinaryCloudName;
+  // Replace these with your actual Cloudinary credentials
+  final String _cloudName = AppConfig.cloudinaryCloudName; 
   final String _uploadPreset = AppConfig.cloudinaryUploadPreset;
-  
-  Future<String?> uploadImage(Uint8List fileBytes) async {
+
+  /// Uploads an image file to Cloudinary and returns the secure URL
+  Future<String?> uploadImage(XFile imageFile) async {
     try {
-      final url = Uri.parse('https://api.cloudinary.com/v1_1/dwihjvj2p/image/upload');
+      final url = Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/image/upload');
       
       final request = http.MultipartRequest('POST', url)
-        ..fields['upload_preset'] = _uploadPreset
-        ..files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: 'upload.jpg'));
+        ..fields['upload_preset'] = _uploadPreset;
+
+      // Determine if web or mobile to handle file adding correctly
+      // XFile abstraction usually handles this, but readAsBytes is safest for web/mobile compatibility
+      final bytes = await imageFile.readAsBytes();
+      request.files.add(http.MultipartFile.fromBytes(
+        'file', 
+        bytes, 
+        filename: imageFile.name
+      ));
 
       final response = await request.send();
-      final responseData = await response.stream.toBytes();
-      final responseString = String.fromCharCodes(responseData);
-      final jsonMap = jsonDecode(responseString);
 
       if (response.statusCode == 200) {
+        final responseData = await response.stream.toBytes();
+        final responseString = String.fromCharCodes(responseData);
+        final jsonMap = jsonDecode(responseString);
         return jsonMap['secure_url'];
       } else {
-        print('Cloudinary Error: ${jsonMap['error']['message']}');
+        print('Cloudinary Upload Failed: ${response.statusCode}');
+        // Try to read error body
+        final responseData = await response.stream.toBytes();
+        print('Error Body: ${String.fromCharCodes(responseData)}');
         return null;
       }
     } catch (e) {
-      print('Upload Error: $e');
+      print('Error uploading to Cloudinary: $e');
       return null;
     }
   }

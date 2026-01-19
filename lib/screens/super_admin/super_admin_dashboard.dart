@@ -195,6 +195,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                            ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
+                                foregroundColor: Colors.deepPurple,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                elevation: 8,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              onPressed: () => context.go('/super_admin/manage-app-content'),
+                              icon: const Icon(Icons.edit_note, size: 24),
+                              label: const Text('Manage Content', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                           ),
+                           const SizedBox(width: 16),
+                           ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
                                 foregroundColor: Colors.orangeAccent,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                                 elevation: 8,
@@ -253,6 +266,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                              ),
                            ),
                          ],
+                       ),
+                       const SizedBox(height: 16),
+                       ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.deepPurple,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          onPressed: () => context.go('/super_admin/manage-app-content'),
+                          icon: const Icon(Icons.edit_note),
+                          label: const Text('Manage Content'),
                        ),
                     ],
                     const SizedBox(height: 20),

@@ -56,8 +56,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() => _isUploadingImage = true);
 
-      final imageBytes = await image.readAsBytes();
-      final imageUrl = await CloudinaryService().uploadImage(imageBytes);
+      // final imageBytes = await image.readAsBytes(); // Removed redundant step
+      final imageUrl = await CloudinaryService().uploadImage(image);
       
       if (imageUrl != null) {
         if (!mounted) return;

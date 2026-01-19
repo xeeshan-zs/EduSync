@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/quiz_app_bar.dart';
 import '../widgets/quiz_app_drawer.dart';
+import '../services/firestore_service.dart';
+import '../models/app_settings_model.dart';
+import '../utils/icon_utils.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -14,7 +17,8 @@ class AboutUsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().user;
-    
+    final firestoreTrace = FirestoreService();
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: QuizAppBar(user: user, isTransparent: true),
@@ -26,7 +30,7 @@ class AboutUsScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 120, 24, 40), // Increased top padding
+              padding: const EdgeInsets.fromLTRB(24, 120, 24, 40), 
               decoration: const BoxDecoration(
                 color: Color(0xFF1E1B2E),
                 gradient: LinearGradient(
@@ -45,7 +49,6 @@ class AboutUsScreen extends StatelessWidget {
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                   // Removed Manual Row
                    SizedBox(height: 20),
                    Text(
                      'Empowering Education',
@@ -75,7 +78,7 @@ class AboutUsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                   Text(
                     'Our Mission',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                   ),
@@ -93,17 +96,23 @@ class AboutUsScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Row(
-                children: [
-                   Icon(Icons.people_outline, color: Theme.of(context).colorScheme.primary),
-                   const SizedBox(width: 8),
-                   Expanded(
-                     child: Text(
-                       'Meet the Runtime Terrors Team',
-                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                     ),
-                   ),
-                ],
+              child: StreamBuilder<AppSettingsModel>(
+                stream: firestoreTrace.getAppSettings(),
+                builder: (context, snapshot) {
+                  final teamName = snapshot.data?.teamName ?? 'Runtime Terrors';
+                  return Row(
+                    children: [
+                       Icon(Icons.people_outline, color: Theme.of(context).colorScheme.primary),
+                       const SizedBox(width: 8),
+                       Expanded(
+                         child: Text(
+                           'Meet the $teamName Team',
+                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                         ),
+                       ),
+                    ],
+                  );
+                }
               ),
             ),
           ),
@@ -111,44 +120,35 @@ class AboutUsScreen extends StatelessWidget {
           // Team Grid
           SliverPadding(
             padding: const EdgeInsets.all(24),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 400,
-                mainAxisExtent: 380, // Taller for avatars
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-              ),
-              delegate: SliverChildListDelegate([
-                 _buildTeamCard(
-                   context, 
-                   'Zeeshan Sarfraz', 
-                   '', 
-                   '',
-                   'assets/images/team/zeeshan_avatar.png',
-                   0,
-                   socialLinks: {
-                     'web': 'https://zeeshan-sarfraz.web.app',
-                     'linkedin': 'https://linkedin.com/in/xeeshan-zs',
-                     'github': 'https://github.com/xeeshan-zs',
-                   }
-                 ),
-                 _buildTeamCard(
-                   context, 
-                   'Hammad Saleem', 
-                   '', 
-                   '',
-                   'assets/images/team/hammad_avatar.png',
-                   1,
-                 ),
-                 _buildTeamCard(
-                   context, 
-                   'Muneeb Ali', 
-                   '', 
-                   '',
-                   'assets/images/team/muneeb_avatar.png',
-                   2,
-                 ),
-              ]),
+            sliver: StreamBuilder<List<TeamMemberModel>>(
+              stream: firestoreTrace.getTeamMembers(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+                }
+                
+                final members = snapshot.data ?? [];
+                
+                if (members.isEmpty) {
+                   return const SliverToBoxAdapter(child: Text('No team members found.'));
+                }
+
+                return SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 400,
+                    mainAxisExtent: 380, // Taller for avatars
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                       final member = members[index];
+                       return _buildTeamCard(context, member, index);
+                    },
+                    childCount: members.length,
+                  ),
+                );
+              },
             ),
           ),
 
@@ -158,7 +158,7 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  static Widget _buildTeamCard(BuildContext context, String name, String role, String description, String imagePath, int index, {Map<String, String>? socialLinks}) {
+  static Widget _buildTeamCard(BuildContext context, TeamMemberModel member, int index) {
     return Card(
       elevation: 4,
       shadowColor: Colors.black26,
@@ -168,11 +168,14 @@ class AboutUsScreen extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(imagePath),
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-          ),
+          image: member.imageUrl.isNotEmpty 
+            ? DecorationImage(
+                image: NetworkImage(member.imageUrl),
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              )
+            : null,
+          color: member.imageUrl.isEmpty ? Colors.grey.shade800 : null,
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -181,9 +184,9 @@ class AboutUsScreen extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.1),
-                Colors.black.withValues(alpha: 0.7),
-                Colors.black.withValues(alpha: 0.95),
+                Colors.black.withOpacity(0.1),
+                Colors.black.withOpacity(0.7),
+                Colors.black.withOpacity(0.95),
               ],
               stops: const [0.0, 0.4, 0.7, 1.0],
             ),
@@ -193,9 +196,14 @@ class AboutUsScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 120), // Spacer to push text down
+              if (member.imageUrl.isEmpty) ...[
+                 Center(child: Text(member.name[0], style: const TextStyle(fontSize: 48, color: Colors.white24))),
+                 const Spacer(),
+              ] else 
+                 const SizedBox(height: 120), // Spacer to push text down
+
               Text(
-                name,
+                member.name,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -203,10 +211,10 @@ class AboutUsScreen extends StatelessWidget {
                   letterSpacing: 0.5,
                 ),
               ),
-              if (role.isNotEmpty) ...[
+              if (member.role.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  role,
+                  member.role,
                   style: TextStyle(
                     color: Colors.blueAccent.shade100,
                     fontSize: 14,
@@ -214,10 +222,10 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                 ),
               ],
-              if (description.isNotEmpty) ...[
+              if (member.description.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  description,
+                  member.description,
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -227,18 +235,11 @@ class AboutUsScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              if (socialLinks != null && socialLinks.isNotEmpty) ...[
+              if (member.socialLinks.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 // Social Icons
                 Row(
-                  children: [
-                    if (socialLinks.containsKey('web'))
-                      _buildSocialIcon(socialLinks['web']!, Icons.language),
-                    if (socialLinks.containsKey('linkedin'))
-                      _buildSocialIcon(socialLinks['linkedin']!, FontAwesomeIcons.linkedin),
-                    if (socialLinks.containsKey('github'))
-                      _buildSocialIcon(socialLinks['github']!, FontAwesomeIcons.github),
-                  ],
+                  children: member.socialLinks.map((link) => _buildSocialIcon(link)).toList(),
                 ),
               ]
             ],
@@ -250,12 +251,14 @@ class AboutUsScreen extends StatelessWidget {
       .slideY(begin: 0.2, end: 0, duration: 600.ms, curve: Curves.easeOutBack);
   }
 
-  static Widget _buildSocialIcon(String url, IconData icon) {
+  static Widget _buildSocialIcon(SocialLink link) {
+    IconData icon = IconUtils.getIcon(link.iconKey);
+
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: InkWell(
         onTap: () async {
-          final uri = Uri.parse(url);
+          final uri = Uri.parse(link.url);
           if (await canLaunchUrl(uri)) {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
           }
@@ -263,7 +266,7 @@ class AboutUsScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: Colors.white.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 18, color: Colors.white),

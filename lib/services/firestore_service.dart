@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/quiz_model.dart';
 import '../models/result_model.dart';
+import '../models/app_settings_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -288,5 +289,50 @@ class FirestoreService {
       'android': android,
       'web': web,
     }, SetOptions(merge: true));
+  }
+
+  // --- App Content / Team Management ---
+
+  Stream<AppSettingsModel> getAppSettings() {
+    return _db.collection('app_settings').doc('general').snapshots().map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return AppSettingsModel.fromMap(doc.data()!);
+      }
+      return AppSettingsModel(teamName: 'Runtime Terrors'); // Default
+    });
+  }
+
+  Future<void> updateAppSettings(AppSettingsModel settings) async {
+    await _db.collection('app_settings').doc('general').set(
+          settings.toMap(),
+          SetOptions(merge: true),
+        );
+  }
+
+  Stream<List<TeamMemberModel>> getTeamMembers() {
+    return _db.collection('team_members').orderBy('order').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return TeamMemberModel.fromMap(doc.id, doc.data());
+      }).toList();
+    });
+  }
+
+  Future<void> addTeamMember(TeamMemberModel member) async {
+    // If id is empty, let firestore generate it, but our model has id. 
+    // Usually we generate ID first or let firestore do it.
+    // Here let's assume we pass empty string and use .add(), or generate one.
+    if (member.id.isEmpty) {
+      await _db.collection('team_members').add(member.toMap());
+    } else {
+      await _db.collection('team_members').doc(member.id).set(member.toMap());
+    }
+  }
+
+  Future<void> updateTeamMember(TeamMemberModel member) async {
+    await _db.collection('team_members').doc(member.id).update(member.toMap());
+  }
+
+  Future<void> deleteTeamMember(String id) async {
+    await _db.collection('team_members').doc(id).delete();
   }
 }
