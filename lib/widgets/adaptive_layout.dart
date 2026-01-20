@@ -17,10 +17,12 @@ class AdaptiveLayout extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<AdaptiveDestination> destinations;
+  final bool useBottomNav;
   final Widget? floatingActionButton;
   final Widget? railTrailing;
   final Widget? railLeading;
   final PreferredSizeWidget? mobileAppBar;
+  final Widget? drawer; // Added drawer
 
   const AdaptiveLayout({
     super.key,
@@ -28,10 +30,12 @@ class AdaptiveLayout extends StatelessWidget {
     required this.currentIndex,
     required this.onDestinationSelected,
     required this.destinations,
+    this.useBottomNav = true,
     this.floatingActionButton,
     this.railTrailing,
     this.railLeading,
     this.mobileAppBar,
+    this.drawer,
   });
 
   @override
@@ -46,13 +50,15 @@ class AdaptiveLayout extends StatelessWidget {
         appBar: mobileAppBar, // Use the top bar on desktop too
         body: body, // No side rail, just content
         floatingActionButton: floatingActionButton,
+        drawer: drawer, // Pass drawer
       );
     } else {
       return Scaffold(
         backgroundColor: const Color(0xFFF3F4F6),
         appBar: mobileAppBar,
+        drawer: drawer, // Pass drawer
         body: body,
-        bottomNavigationBar: NavigationBar(
+        bottomNavigationBar: useBottomNav ? NavigationBar(
           selectedIndex: currentIndex,
           onDestinationSelected: onDestinationSelected,
           backgroundColor: Colors.white,
@@ -64,7 +70,7 @@ class AdaptiveLayout extends StatelessWidget {
               label: d.label,
             );
           }).toList(),
-        ),
+        ) : null,
         floatingActionButton: floatingActionButton,
       );
     }

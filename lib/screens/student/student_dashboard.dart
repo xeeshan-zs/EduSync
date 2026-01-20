@@ -8,6 +8,7 @@ import '../../services/firestore_service.dart';
 import '../../widgets/quiz_app_bar.dart';
 import '../../widgets/skeleton_quiz_card.dart';
 import '../../widgets/adaptive_layout.dart';
+import '../../widgets/quiz_app_drawer.dart'; // Added import
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -45,6 +46,8 @@ class StudentDashboard extends StatefulWidget {
       currentIndex: _selectedIndex,
       onDestinationSelected: _onNavTapped,
       mobileAppBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user), // Enable Hamburger Menu
+      useBottomNav: false, // Disable Bottom Nav
       destinations: const [
         AdaptiveDestination(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Home'),
         AdaptiveDestination(icon: Icons.history_edu, selectedIcon: Icons.history_edu, label: 'History'),
@@ -142,12 +145,9 @@ class StudentDashboard extends StatefulWidget {
                         children: [
                           Icon(Icons.play_circle_fill, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              'Available Quizzes',
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Text(
+                            'Available Quizzes',
+                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           Container(
@@ -229,10 +229,10 @@ class StudentDashboard extends StatefulWidget {
         padding: const EdgeInsets.fromLTRB(24, 120, 24, 40),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1B2E),
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.primaryContainer,
+              Color(0xFF2E236C), // Deep Purple
+              Color(0xFF433D8B), // Rich Blue-Purple
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -267,6 +267,23 @@ class StudentDashboard extends StatefulWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
+            
+            // History Button
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/student/history'),
+                icon: const Icon(Icons.history, size: 18),
+                label: const Text('History'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  side: BorderSide(color: Colors.white.withOpacity(0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -10,6 +10,7 @@ import '../../widgets/adaptive_layout.dart';
 import '../../widgets/quiz_app_bar.dart';
 import '../../widgets/manage_classes_dialog.dart';
 import '../../widgets/edit_user_dialog.dart';
+import '../../widgets/quiz_app_drawer.dart'; // Added import
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -140,6 +141,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       currentIndex: _selectedIndex,
       onDestinationSelected: _onNavTapped,
       mobileAppBar: QuizAppBar(user: user),
+      drawer: QuizAppDrawer(user: user), // Added drawer
+      useBottomNav: false, // User requested removal
       destinations: const [
         AdaptiveDestination(icon: Icons.people_outline, selectedIcon: Icons.people, label: 'Users'),
         AdaptiveDestination(icon: Icons.assignment_outlined, selectedIcon: Icons.assignment, label: 'Quizzes'),
