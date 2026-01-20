@@ -35,16 +35,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   
   // Stats
   int _totalLoaded = 0;
+  
+  // Controller
+  late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController(text: _searchQuery);
     _fetchUsers();
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -79,12 +84,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       
       if (_selectedAdmin == null) {
           // MODE 1: Show ALL Admins (Global)
-          // Removed createdBy filter so Super Admin sees everyone
+          // Reverted to strict Admin view as requested ("logic of deployed version is good")
           newUsers = await FirestoreService().getUsersPaginated(
             limit: 20,
             lastDocument: _lastDocument,
             roleFilter: 'admin', 
-            // createdBy: myUid, // REMOVED to show all admins
             searchQuery: _searchQuery,
           );
       } else {
@@ -136,6 +140,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     setState(() {
       _selectedAdmin = admin;
       _searchQuery = ''; // Reset search for new context
+      _searchController.text = ''; // Clear controller text
       _selectedRoleFilter = 'All'; // Reset filter
     });
     _fetchUsers(refresh: true);
@@ -145,6 +150,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     setState(() {
       _selectedAdmin = null;
       _searchQuery = '';
+      _searchController.text = ''; 
     });
     _fetchUsers(refresh: true);
   }
@@ -218,6 +224,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                   // Removed specific role counts as we don't have full list
                                   if (_isLoading) 
                                      _buildStatBadge(Icons.sync, 'Loading...'),
+                                  
+                                  // Re-index Button (Visible only to Super Admin)
+                                  if (_selectedAdmin == null)
+                                    TextButton.icon(
+                                      onPressed: _reindexDatabase, 
+                                      icon: const Icon(Icons.build_circle, color: Colors.white70, size: 16), 
+                                      label: const Text('Fix Search', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                      style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                                    ),
                                 ],
                               ),
                             ],
@@ -389,7 +404,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           Container(
                             constraints: const BoxConstraints(maxWidth: 250),
                               child: TextField(
-                                controller: TextEditingController(text: _searchQuery), // Sync text
+                                controller: _searchController, // Use persistent controller
                                 onChanged: (v) => _onSearchChanged(v),
                                 decoration: InputDecoration(
                                   hintText: 'Search Name...',
@@ -451,11 +466,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
   Widget _buildUserCard(BuildContext context, UserModel u, FirestoreService firestoreService, UserModel? text) {
       final isSelf = u.uid == text?.uid;
-      // Clickable if we are at root level (not drilled down) AND the row is an Admin
       final isClickable = _selectedAdmin == null && u.role == UserRole.admin;
+      final isMobile = MediaQuery.of(context).size.width < 600;
 
       return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Added some horizontal margin for shadow visibility and vertical spacing
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), 
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -474,10 +489,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             onTap: isClickable ? () => _selectAdmin(u) : null,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Balanced padding
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  // Left: Avatar
+                  // Avatar
                   Container(
                       width: 48, height: 48,
                       decoration: BoxDecoration(
@@ -497,7 +512,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   ),
                   const SizedBox(width: 16),
                   
-                  // Middle: Info
+                  // Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,69 +520,103 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       children: [
                          Row(
                            children: [
+                             // Name: Allow wrapping on mobile, but keep flexible
                              Flexible(
                                child: Text(
                                  u.name + (isSelf ? ' (You)' : ''), 
                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                                 overflow: TextOverflow.ellipsis,
+                                 maxLines: isMobile ? 2 : 1, // Allow 2 lines on mobile
+                                 overflow: isMobile ? TextOverflow.visible : TextOverflow.ellipsis,
                                ),
                              ),
-                             const SizedBox(width: 8),
-                             _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
+                             if (!isMobile) ...[
+                                const SizedBox(width: 8),
+                                _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
+                             ]
                            ],
                          ),
+                         if (isMobile) 
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: _buildStatusBadge(u.role.name.toUpperCase(), _getRoleColor(u.role)),
+                            ),
                          const SizedBox(height: 4),
                          Text(u.email, style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
 
-                  // Right: Actions
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                       if (isClickable) ...[
-                          IconButton(
-                            icon: const Icon(Icons.groups, color: Colors.deepPurple, size: 20),
-                            tooltip: 'Manage Users',
-                            splashRadius: 20,
-                            onPressed: () => _selectAdmin(u),
-                          ),
-                          const SizedBox(width: 8),
-                       ],
-                       
-                       Switch(
-                          value: !u.isDisabled, 
-                          activeColor: Colors.green,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
-                       ),
-                       const SizedBox(width: 8),
-                       
-                       IconButton(
-                         icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
-                         tooltip: 'Edit',
-                         splashRadius: 20,
-                         constraints: const BoxConstraints(),
-                         padding: EdgeInsets.zero,
-                         onPressed: () => showDialog(
-                           context: context,
-                           builder: (c) => EditUserDialog(user: u),
+                  // Actions
+                  if (isMobile)
+                    // Mobile: Popup Menu
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (val) {
+                         if (val == 'edit') showDialog(context: context, builder: (c) => EditUserDialog(user: u));
+                         if (val == 'delete') _confirmDeleteUser(context, u, firestoreService);
+                         if (val == 'manage') _selectAdmin(u);
+                         if (val == 'toggle') _toggleUserStatus(u, firestoreService);
+                      },
+                      itemBuilder: (context) => [
+                        if (isClickable)
+                          const PopupMenuItem(value: 'manage', child: Row(children: [Icon(Icons.groups, size: 20), SizedBox(width: 8), Text('Manage Users')])),
+                        PopupMenuItem(
+                          value: 'toggle', 
+                          child: Row(children: [
+                             Icon(u.isDisabled ? Icons.check_circle : Icons.block, size: 20, color: u.isDisabled ? Colors.green : Colors.grey), 
+                             const SizedBox(width: 8), 
+                             Text(u.isDisabled ? 'Enable' : 'Disable')
+                          ])
+                        ),
+                        const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Edit')])),
+                        if (!isSelf)
+                          const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Delete')])),
+                      ],
+                    )
+                  else
+                    // Desktop: Row of Buttons
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                         if (isClickable) ...[
+                            IconButton(
+                              icon: const Icon(Icons.groups, color: Colors.deepPurple, size: 20),
+                              tooltip: 'Manage Users',
+                              splashRadius: 20,
+                              onPressed: () => _selectAdmin(u),
+                            ),
+                            const SizedBox(width: 8),
+                         ],
+                         Switch(
+                            value: !u.isDisabled, 
+                            activeColor: Colors.green,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onChanged: isSelf ? null : (val) => _toggleUserStatus(u, firestoreService),
                          ),
-                       ),
-                       const SizedBox(width: 12),
-                       
-                       if (!isSelf)
+                         const SizedBox(width: 8),
                          IconButton(
-                           icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                           tooltip: 'Delete',
+                           icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent, size: 20),
+                           tooltip: 'Edit',
                            splashRadius: 20,
                            constraints: const BoxConstraints(),
                            padding: EdgeInsets.zero,
-                           onPressed: () => _confirmDeleteUser(context, u, firestoreService),
+                           onPressed: () => showDialog(
+                             context: context,
+                             builder: (c) => EditUserDialog(user: u),
+                           ),
                          ),
-                    ],
-                  ),
+                         const SizedBox(width: 12),
+                         if (!isSelf)
+                           IconButton(
+                             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                             tooltip: 'Delete',
+                             splashRadius: 20,
+                             constraints: const BoxConstraints(),
+                             padding: EdgeInsets.zero,
+                             onPressed: () => _confirmDeleteUser(context, u, firestoreService),
+                           ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -719,6 +768,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         context: context, 
         builder: (context) => _CreateUserDialog(preselectedAdmin: _selectedAdmin)
       );
+  }
+
+
+  Future<void> _reindexDatabase() async {
+      try {
+        setState(() => _isLoading = true);
+        final count = await FirestoreService().reindexUsers();
+        if (mounted) {
+           setState(() => _isLoading = false);
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search Index repaired. Updated $count users.')));
+           _fetchUsers(refresh: true);
+        }
+      } catch (e) {
+        if (mounted) {
+           setState(() => _isLoading = false);
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error repairing index: $e')));
+        }
+      }
   }
 }
 

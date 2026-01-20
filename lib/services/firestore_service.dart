@@ -88,10 +88,17 @@ class FirestoreService {
 
     // Search or Default Sort
     if (searchQuery != null && searchQuery.isNotEmpty) {
+      // Heuristic: Auto-capitalize first letter to match "Name" format 
+      // since Firestore is case-sensitive and we don't have a lowercase index yet.
+      String formattedQuery = searchQuery;
+      if (searchQuery.length > 0) {
+         formattedQuery = searchQuery[0].toUpperCase() + searchQuery.substring(1);
+      }
+
       query = query
           .orderBy('title')
-          .startAt([searchQuery])
-          .endAt(['$searchQuery\uf8ff']);
+          .startAt([formattedQuery])
+          .endAt(['$formattedQuery\uf8ff']);
     } else {
       // Default: Newest first
       query = query.orderBy('createdAt', descending: true);
@@ -196,9 +203,12 @@ class FirestoreService {
     String? adminId, 
   }) async {
     final updates = <String, dynamic>{};
-    if (name != null) updates['name'] = name;
+    if (name != null) {
+      updates['name'] = name;
+      updates['name_lowercase'] = name.toLowerCase(); // Case-insensitive index
+    }
     if (email != null) updates['email'] = email;
-    if (photoUrl != null) updates['photoUrl'] = photoUrl; // Add to updates
+    if (photoUrl != null) updates['photoUrl'] = photoUrl;
     if (role != null) updates['role'] = role.name;
     if (metadata != null) updates['metadata'] = metadata;
     if (adminId != null) updates['adminId'] = adminId;
@@ -210,7 +220,9 @@ class FirestoreService {
   
   Future<void> createUser(UserModel user, String password) async {
      // Saves user with adminId and createdBy
-     await _db.collection('users').doc(user.uid).set(user.toMap());
+     final data = user.toMap();
+     data['name_lowercase'] = user.name.toLowerCase(); // Add Index
+     await _db.collection('users').doc(user.uid).set(data);
   }
 
   // Paginated Users Fetch
@@ -244,11 +256,19 @@ class FirestoreService {
 
     // Search or Sort
     if (searchQuery != null && searchQuery.isNotEmpty) {
+      // Robust Case-Insensitive Search
+      final queryLower = searchQuery.toLowerCase();
       query = query
-          .orderBy('name')
-          .startAt([searchQuery])
-          .endAt(['$searchQuery\uf8ff']);
+          .orderBy('name_lowercase')
+          .startAt([queryLower])
+          .endAt(['$queryLower\uf8ff']);
     } else {
+      // Default Sort (must match field if possible, but 'name' is fine if no filter. 
+      // However, for consistency with 'name_lowercase' potentially being the index:)
+      // query = query.orderBy('name'); 
+      // BETTER: Keep using name unless searching? 
+      // Actually, if we want consistency, we should use name_lowercase, but that hides non-migrated users.
+      // Strategy: Only use name_lowercase if searching. 
       query = query.orderBy('name');
     }
 
@@ -380,5 +400,41 @@ class FirestoreService {
 
   Future<void> deleteTeamMember(String id) async {
     await _db.collection('team_members').doc(id).delete();
+  }
+
+  // --- Migration Utilities ---
+  Future<int> reindexUsers() async {
+    int count = 0;
+    try {
+      final snapshot = await _db.collection('users').get();
+      // Batch limit is 500. We must chunk.
+      // However, creating 500 writes in memory is fine, but we can only add 500 to a batch.
+      
+      WriteBatch batch = _db.batch();
+      int currentBatchSize = 0;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        if (data['name'] != null) {
+          final name = data['name'].toString();
+          if (data['name_lowercase'] != name.toLowerCase()) {
+             batch.update(doc.reference, {'name_lowercase': name.toLowerCase()});
+             count++;
+             currentBatchSize++;
+
+             if (currentBatchSize >= 499) {
+               await batch.commit();
+               batch = _db.batch();
+               currentBatchSize = 0;
+             }
+          }
+        }
+      }
+      if (currentBatchSize > 0) await batch.commit();
+      return count;
+    } catch (e) {
+      print('Reindex Error: $e');
+      rethrow;
+    }
   }
 }

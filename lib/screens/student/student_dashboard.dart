@@ -24,6 +24,21 @@ class StudentDashboard extends StatefulWidget {
   int _selectedIndex = 0;
   String _searchQuery = '';
   String _sortOption = 'Title (A-Z)';
+  
+  // Controller for Search
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: _searchQuery);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _onNavTapped(int index) {
       if (index == _selectedIndex) return;
@@ -298,7 +313,10 @@ class StudentDashboard extends StatefulWidget {
           children: [
             Expanded(
               child: TextField(
-                onChanged: (val) => setState(() => _searchQuery = val),
+                controller: _searchController, // Use persistent controller
+                onChanged: (val) {
+                   setState(() => _searchQuery = val);
+                },
                  decoration: InputDecoration(
                    hintText: 'Search quizzes...',
                    prefixIcon: const Icon(Icons.search),
